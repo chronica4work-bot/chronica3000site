@@ -106,49 +106,78 @@ const featured = await loadFeatured();
   (function () {
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
-    if (typeof IntersectionObserver === 'undefined') {
-      // Old browser fallback: just load + play everything eagerly.
-      document.querySelectorAll('.highlight__video').forEach(function (v) {
-        var src = v.getAttribute('data-src');
-        if (src && !v.src) v.src = src;
-        v.addEventListener('loadeddata', function () { v.setAttribute('data-ready', 'true'); }, { once: true });
-        try { v.play().catch(function () {}); } catch (e) {}
+
+    /*
+     * IMPORTANT — gate attachment behind the hero's `canplay`.
+     *
+     * Why: if we attach the IntersectionObserver immediately on parse, the
+     * first highlight section is already inside our rootMargin and starts
+     * fetching its hover.mp4 *in parallel* with the hero video. On a phone
+     * that bandwidth contention is what makes the homepage feel slow.
+     *
+     * The hero dispatches `chronica:hero-ready` from ReelHero.astro when
+     * its `canplay` fires (or after a 3s fallback). We only start
+     * observing then. `window.__chronicaHeroReady` covers the race where
+     * the hero already fired before this script ran.
+     */
+    function attach() {
+      // Touch devices: rootMargin "0px" — only load the section the user is
+      // actually about to see. Avoids burning cellular data prefetching
+      // sections the user may never scroll to.
+      var isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+      var rootMargin = isTouch ? '0px' : '150% 0px';
+
+      if (typeof IntersectionObserver === 'undefined') {
+        // Old browser fallback: just load + play everything eagerly.
+        document.querySelectorAll('.highlight__video').forEach(function (v) {
+          var src = v.getAttribute('data-src');
+          if (src && !v.src) v.src = src;
+          v.addEventListener('loadeddata', function () { v.setAttribute('data-ready', 'true'); }, { once: true });
+          try { v.play().catch(function () {}); } catch (e) {}
+        });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          var v = entry.target;
+          if (entry.isIntersecting) {
+            // First contact: kick off the fetch.
+            var src = v.getAttribute('data-src');
+            if (src && !v.src) {
+              v.src = src;
+              v.addEventListener('loadeddata', function () {
+                v.setAttribute('data-ready', 'true');
+              }, { once: true });
+              try { v.load(); } catch (e) {}
+            }
+            try { v.play().catch(function () {}); } catch (e) {}
+          } else {
+            // Out of view: pause + rewind so the next entry starts clean.
+            // We deliberately do NOT clear src — the loaded buffer stays in
+            // memory so coming back is instant.
+            try { v.pause(); v.currentTime = 0; } catch (e) {}
+          }
+        });
+      }, {
+        rootMargin: rootMargin,
+        threshold: 0.01,
       });
-      return;
+
+      document.querySelectorAll('.highlight__video').forEach(function (v) {
+        observer.observe(v);
+      });
     }
 
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        var v = entry.target;
-        if (entry.isIntersecting) {
-          // First contact: kick off the fetch.
-          var src = v.getAttribute('data-src');
-          if (src && !v.src) {
-            v.src = src;
-            v.addEventListener('loadeddata', function () {
-              v.setAttribute('data-ready', 'true');
-            }, { once: true });
-            try { v.load(); } catch (e) {}
-          }
-          try { v.play().catch(function () {}); } catch (e) {}
-        } else {
-          // Out of view: pause + rewind so the next entry starts clean.
-          // We deliberately do NOT clear src — the loaded buffer stays in
-          // memory so coming back is instant.
-          try { v.pause(); v.currentTime = 0; } catch (e) {}
-        }
-      });
-    }, {
-      // Start loading well before the section enters the viewport. 150%
-      // gives us ~1.5 viewports of lead time on both sides, which is enough
-      // to hide the load on normal scroll speeds without prefetching all 6.
-      rootMargin: '150% 0px',
-      threshold: 0.01,
-    });
-
-    document.querySelectorAll('.highlight__video').forEach(function (v) {
-      observer.observe(v);
-    });
+    if (window.__chronicaHeroReady) {
+      attach();
+    } else {
+      document.addEventListener('chronica:hero-ready', attach, { once: true });
+      // Safety net — if the hero never reports ready (broken codec, etc),
+      // still bring the highlights online so the page isn't dead below
+      // the fold. 5s gives the hero a real chance first.
+      setTimeout(attach, 5000);
+    }
   })();
 
   // On highlight click: stamp the URL hash to "#highlight-<slug>" via

@@ -24,9 +24,10 @@ const { src = '/video/reel.mp4', poster } = Astro.props;
     muted
     loop
     playsinline
-    preload="metadata"
+    preload="auto"
     poster={poster}
     aria-hidden="true"
+    data-hero
   >
     <source src={src} type="video/mp4" />
   </video>
@@ -45,6 +46,42 @@ const { src = '/video/reel.mp4', poster } = Astro.props;
     </div>
   </div>
 </section>
+
+<script is:inline>
+  /*
+   * Hero-ready signal.
+   *
+   * The loading screen in BaseLayout listens for `chronica:hero-ready` and
+   * fades when it fires. We send it as soon as the hero video reports it
+   * can start playing — that's the moment a real user would expect the
+   * site to "begin". If `canplay` never arrives (slow network, unsupported
+   * codec, autoplay policy block), the loader's own 3.5s safety timeout
+   * still dismisses it, but we also send the event from a 3s fallback here
+   * so downstream listeners (e.g. HighlightedWorks) don't wait either.
+   *
+   * Also sets `window.__chronicaHeroReady = true` so late-attaching
+   * listeners can detect the missed event synchronously.
+   */
+  (function () {
+    var v = document.querySelector('[data-hero]');
+    var fired = false;
+    function ready() {
+      if (fired) return;
+      fired = true;
+      window.__chronicaHeroReady = true;
+      try { document.dispatchEvent(new CustomEvent('chronica:hero-ready')); } catch (e) {}
+    }
+    if (!v) { ready(); return; }
+    // readyState >= 3 → HAVE_FUTURE_DATA, enough to start playback
+    if (v.readyState >= 3) ready();
+    else {
+      v.addEventListener('canplay', ready, { once: true });
+      v.addEventListener('loadeddata', ready, { once: true }); // Safari sometimes fires this first
+    }
+    // Fallback so the rest of the page doesn't hang on a stalled hero.
+    setTimeout(ready, 3000);
+  })();
+</script>
 
 <style>
   /* The section itself is sized by .page-home rules in global.css.

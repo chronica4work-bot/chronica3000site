@@ -105,15 +105,25 @@ ol {
    `pageClass="page-home"` sets the class on <html>. We pin <html> as the
    ONE AND ONLY scroll container so its scroll-snap actually fires.
    Mandatory + always: every scroll gesture locks to the next section.
+
+   iOS Safari notes:
+   - The scroll container needs an EXPLICIT height for snap to anchor
+     reliably (otherwise iOS sometimes treats overflow scroll as the body).
+   - Container and sections share the SAME viewport unit (100dvh) so
+     they reflow together when the toolbar shows/hides — no misalignment.
+   - We deliberately do NOT use `-webkit-overflow-scrolling: touch`
+     (deprecated; on modern iOS it can BREAK snap behaviour).
    ===================================================== */
 html.page-home {
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   background: #000000;
 
-  /* Make html the definitive scroll container. */
+  /* Pin html as the definitive scroll container with an explicit height.
+     100dvh = dynamic viewport height; reflows with iOS toolbar. */
+  height: 100dvh;
   overflow-y: auto;
-  overflow-x: clip;            /* like hidden but doesn't create a new formatting context that competes */
+  overflow-x: clip;            /* like hidden but doesn't compete with snap */
   overscroll-behavior-y: none; /* no rubber-band overshoot that breaks snap perception */
 }
 
@@ -123,11 +133,16 @@ html.page-home {
 html.page-home body {
   overflow: visible;
   min-height: 0;
+  height: auto;  /* let body grow to total content (6+ sections) */
 }
 
 html.page-home main > section {
-  height: 100svh;
-  min-height: 100svh;
+  /* Match the container's viewport unit exactly so each section is one
+     "screen" tall — even as the iOS toolbar toggles. Previously we used
+     100svh, which left a sliver of empty space below the section when
+     the toolbar retracted. */
+  height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
   position: relative;
   scroll-snap-align: start;
@@ -143,12 +158,8 @@ html.page-home main > section {
   }
 }
 
-/* Mobile fallback: mandatory snap can feel hostile on touch devices where
-   the user wants finer-grained scrolling control. Drop to "proximity" on
-   coarse pointers so the lock still happens, but mid-gesture pans don't
-   feel trapped. */
-@media (pointer: coarse) {
-  html.page-home {
-    scroll-snap-type: y proximity;
-  }
-}
+/* NOTE — we used to drop snap to `proximity` on coarse pointers, hoping it
+   would feel less aggressive. In practice it made iOS feel "unlocked" mid-
+   scroll: the brief explicitly asks for section-by-section locking on
+   mobile. Mandatory everywhere is the right call; iOS handles it fine as
+   long as the container has an explicit height (above). */
