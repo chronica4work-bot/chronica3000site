@@ -1,0 +1,68 @@
+---
+/**
+ * Renders one editorial outline button per /links/*.txt that the project has.
+ * Conditional — renders nothing when `links` is empty.
+ *
+ * Keys are pretty-printed for the label (e.g. "bts-video" → "bts video").
+ */
+
+export interface Props {
+  /** Map of link slug → URL (e.g. { 'bts-video': 'https://…' }) */
+  links: Record<string, string>;
+}
+
+const { links } = Astro.props;
+const entries = Object.entries(links);
+
+function prettyLabel(key: string): string {
+  return key.replace(/[-_]+/g, ' ').toLowerCase();
+}
+---
+
+{entries.length > 0 && (
+  <section class="links" aria-label="External links">
+    <ul class="links__list">
+      {entries.map(([key, href]) => (
+        <li>
+          <a class="links__btn" href={href} target="_blank" rel="noopener noreferrer">
+            <span class="links__sign" aria-hidden="true">+</span>
+            <span>{prettyLabel(key)}</span>
+            <span class="links__arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .links {
+    padding-block: clamp(24px, 3vw, 40px);
+  }
+  .links__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .links__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--fs-sm);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-ink-soft);
+    padding: 8px 14px;
+    border: 1px solid var(--c-rule-hard);
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  }
+  .links__btn:hover { color: var(--c-mark); border-color: var(--c-mark); }
+  .links__sign {
+    font-family: var(--font-mono);
+  }
+  .links__arrow {
+    font-size: 0.9em;
+    color: var(--c-ink-mute);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .links__btn:hover .links__arrow { color: var(--c-mark); }
+</style>

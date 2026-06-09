@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import ArchiveList from '../components/ArchiveList.astro';
+import ContactSection from '../components/ContactSection.astro';
+---
+
+<BaseLayout title="archive">
+  <Nav variant="solid" showBack backFallback="/works" />
+  <main>
+    <ArchiveList />
+    <ContactSection />
+  </main>
+</BaseLayout>

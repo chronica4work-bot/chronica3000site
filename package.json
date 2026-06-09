@@ -1,0 +1,22 @@
+{
+  "name": "chronica3000",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "predev": "astro sync",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "sync": "astro sync",
+    "clean": "rm -rf .astro dist node_modules/.vite",
+    "fresh": "npm run clean && npm run sync && npm run dev",
+    "check:content": "node scripts/check-content.mjs",
+    "diagnose": "node scripts/diagnose-projects.mjs",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^5.1.1"
+  }
+}

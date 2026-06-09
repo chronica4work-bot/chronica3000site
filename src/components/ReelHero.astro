@@ -1,0 +1,148 @@
+---
+/**
+ * Fullscreen cinematic reel — homepage hero.
+ *
+ * Layout: video fills the viewport; the tagline is dead-center (small, quiet,
+ * monospaced); the scroll cue sits at the bottom, anchored in its own corner
+ * of the same grid cell.
+ *
+ * The hero is itself a 100svh snap section (see global.css `.page-home`).
+ */
+
+export interface Props {
+  src?: string;
+  poster?: string;
+}
+
+const { src = '/video/reel.mp4', poster } = Astro.props;
+---
+
+<section class="hero" aria-label="chronica 3000 reel">
+  <video
+    class="hero__video"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="metadata"
+    poster={poster}
+    aria-hidden="true"
+  >
+    <source src={src} type="video/mp4" />
+  </video>
+  <div class="hero__veil" aria-hidden="true"></div>
+
+  <div class="hero__layer">
+    <p class="hero__tagline">
+      <span>barcelona based visual production collective.</span>
+      <br />
+      <span>available worldwide.</span>
+    </p>
+
+    <div class="hero__scroll" aria-hidden="true">
+      <span class="hero__scroll-line"></span>
+      <span class="hero__scroll-label">scroll</span>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The section itself is sized by .page-home rules in global.css.
+     Keep .hero behaviour focused on layering + background. */
+  .hero {
+    width: 100%;
+    background: #000;
+  }
+
+  .hero__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.04);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__video { display: none; }
+    .hero {
+      background-image: var(--hero-poster, none);
+      background-size: cover;
+      background-position: center;
+    }
+  }
+
+  .hero__veil {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to bottom,
+        rgba(12, 12, 12, 0.5) 0%,
+        rgba(12, 12, 12, 0)   18%,
+        rgba(12, 12, 12, 0)   70%,
+        rgba(12, 12, 12, 0.6) 100%);
+    pointer-events: none;
+  }
+
+  .hero__layer {
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-content);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+
+  /* Tagline — Tilda-correlated spec.
+     font-family Roboto Mono, font-size clamp(13px, 1vw, 15px), font-weight 400,
+     line-height 1.6, color #E8E8E8, letter-spacing 0, text-align center, max-width 520px,
+     centered both axes via the grid above. */
+  .hero__tagline {
+    grid-column: 1;
+    grid-row: 1;
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: clamp(13px, 1vw, 15px);
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: 0;
+    text-align: center;
+    color: #E8E8E8;
+    text-transform: lowercase;
+    max-width: 520px;
+    width: min(520px, 90vw);
+    margin: 0;
+    padding-inline: 16px;
+    pointer-events: auto;
+  }
+
+  /* Scroll cue in the same grid cell, anchored to its own corner. */
+  .hero__scroll {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    justify-self: center;
+    margin-bottom: clamp(28px, 5vh, 56px);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(232, 232, 232, 0.7);
+    pointer-events: auto;
+  }
+  .hero__scroll-line {
+    width: 1px;
+    height: 28px;
+    background: currentColor;
+    transform-origin: top;
+    animation: scrollPulse 2.6s var(--ease) infinite;
+  }
+  @keyframes scrollPulse {
+    0%, 100% { transform: scaleY(0.55); opacity: 0.6; }
+    50%      { transform: scaleY(1);    opacity: 1;   }
+  }
+</style>

@@ -1,0 +1,70 @@
+---
+import '../styles/global.css';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  /** Open Graph preview image — absolute or root-relative path. */
+  ogImage?: string;
+  /** Apply theme-color = bg so mobile chrome matches. */
+  matchChrome?: boolean;
+  /** Class applied to <html>. Pages opt into page-scoped behaviour (e.g. scroll-snap). */
+  pageClass?: string;
+}
+
+const {
+  title = 'chronica 3000',
+  description = 'barcelona based visual production collective. available worldwide.',
+  ogImage = '/img/chronica-logo.png',
+  matchChrome = true,
+  pageClass,
+} = Astro.props;
+
+const fullTitle = title === 'chronica 3000' ? title : `${title} — chronica 3000`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://chronica3000.com').toString();
+---
+
+<!doctype html>
+<html lang="en" class:list={[pageClass]}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no" />
+    {matchChrome && <meta name="theme-color" content="#0a0a0a" />}
+
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/png" href="/img/chronica-logo.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Roboto+Mono:wght@300;400;500;600;700&display=swap" />
+
+    {/* Section-restore on back navigation:
+        If the URL has a hash (e.g. "/#highlight-fullmoon" returning from a project page),
+        disable smooth-scroll for the initial paint so the browser jumps to that anchor
+        instantly instead of animating from the top. Restore smooth scroll after load. */}
+    <script is:inline>
+      if (window.location.hash) {
+        document.documentElement.style.scrollBehavior = 'auto';
+        window.addEventListener('load', function () {
+          requestAnimationFrame(function () {
+            document.documentElement.style.scrollBehavior = '';
+          });
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

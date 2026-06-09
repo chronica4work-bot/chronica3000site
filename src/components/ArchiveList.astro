@@ -1,0 +1,124 @@
+---
+/**
+ * /archive — brutalist typographic list.
+ *
+ * Single column of project titles. No thumbnails, no years, no categories,
+ * no markers, no dividers. White text on black. Hover: a tight white block
+ * hugs only the title (not the whole row), text flips to black.
+ *
+ * Whole row is the click target (block-level <a>), the inversion block is
+ * just the visual feedback.
+ *
+ * Typography is **Inter 700** (the only place on the site using Inter —
+ * everything else stays Roboto Mono). Inter is loaded in BaseLayout.
+ */
+
+import { loadForArchive } from '../lib/projects';
+
+const items = await loadForArchive();
+---
+
+<section class="archive">
+  <h1 class="sr-only">archive</h1>
+
+  <ul class="archive__list">
+    {items.map((item) => {
+      if (item.kind === 'project') {
+        const p = item.entry;
+        const href = p.data.hasPage ? `/${p.data.slug}` : undefined;
+        return (
+          <li class="archive__row">
+            {href ? (
+              <a class="archive__link" href={href} data-source="archive">
+                <span class="archive__title">{p.data.title}</span>
+              </a>
+            ) : (
+              <span class="archive__link is-static">
+                <span class="archive__title">{p.data.title}</span>
+              </span>
+            )}
+          </li>
+        );
+      }
+      // archive-only mention (no folder, no page)
+      return (
+        <li class="archive__row">
+          <span class="archive__link is-static">
+            <span class="archive__title">{item.entry.title}</span>
+          </span>
+        </li>
+      );
+    })}
+  </ul>
+</section>
+
+<script is:inline>
+  document.querySelectorAll('[data-source="archive"]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      try { sessionStorage.setItem('chronica:lastList', '/archive'); } catch (e) {}
+    });
+  });
+</script>
+
+<style>
+  .archive {
+    /* Sits below the solid nav. Pure black background — brutalist. */
+    padding-top: clamp(96px, 14vh, 160px);
+    padding-bottom: clamp(80px, 12vw, 160px);
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .archive__list {
+    list-style: none;
+    width: 100%;
+    max-width: var(--max-w);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  /* Each row sits beneath a small top margin (visible gap between titles),
+     and the link itself has tight padding-block — enough that the whole
+     row is comfortably clickable, but the list reads as a compact editorial
+     register, not landing-page headlines. */
+  .archive__row + .archive__row { margin-top: 12px; }
+
+  .archive__link {
+    display: block;
+    width: 100%;
+    padding-block: 3px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .archive__link.is-static { cursor: default; }
+
+  /* The title is an inline-block that hugs its own content width.
+     Hover paints a tight white block just around this — sized to the
+     line height, not dominating the row. */
+  .archive__title {
+    display: inline-block;
+    padding: 3px 12px;
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: clamp(18px, 2vw, 28px);
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    color: #ffffff;
+    background: transparent;
+    transition: background 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                color      200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Inversion on hover/focus — clickable rows only. */
+  .archive__link:hover:not(.is-static) .archive__title,
+  .archive__link:focus-visible:not(.is-static) .archive__title {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  /* Non-clickable rows (archive-only mentions like BLUE BANANA, TOURIST GO HOME):
+     dimmer to signal "not a link" without adding any decorative element. */
+  .archive__link.is-static .archive__title {
+    color: rgba(255, 255, 255, 0.5);
+  }
+</style>

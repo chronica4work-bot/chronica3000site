@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import WorksGrid from '../components/WorksGrid.astro';
+import ContactSection from '../components/ContactSection.astro';
+
+import { loadForWorks, groupByCategory } from '../lib/projects';
+
+const projects = await loadForWorks();
+const groups = groupByCategory(projects);
+---
+
+<BaseLayout title="works">
+  <Nav variant="solid" showBack backFallback="/" />
+  <main>
+    <WorksGrid groups={groups} />
+    <ContactSection />
+  </main>
+</BaseLayout>

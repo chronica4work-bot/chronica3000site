@@ -1,0 +1,108 @@
+---
+/**
+ * Contact section — full 100svh snap section on the homepage.
+ *
+ * The .page-home rule in global.css gives this <section> height: 100svh +
+ * scroll-snap-align: start, so we only need to handle internal layout here.
+ *
+ * On inner pages this same component renders without snap (its parent <main>
+ * isn't inside .page-home). It just becomes a natural-height block.
+ *
+ * Visual: centered vertical column, Roboto Mono on #000000, white text.
+ */
+
+const year = new Date().getFullYear();
+---
+
+<section id="contact" class="contact" aria-label="Contact">
+  <div class="contact__inner">
+    <span class="contact__label">[contact us]</span>
+
+    <a href="mailto:chronica4work@gmail.com" class="contact__email">chronica4work@gmail.com</a>
+
+    <ul class="contact__socials" aria-label="Social">
+      <li><a href="https://instagram.com/chronica3000" target="_blank" rel="noopener noreferrer">instagram</a></li>
+      <li><a href="https://youtube.com/@chronica3000"  target="_blank" rel="noopener noreferrer">youtube</a></li>
+      <li><a href="https://t.me/shaolinfantastic"      target="_blank" rel="noopener noreferrer">telegram</a></li>
+    </ul>
+
+    <p class="contact__copy">© {year} chronica — barcelona</p>
+  </div>
+</section>
+
+<style>
+  .contact {
+    background: #000000;
+    color: #ffffff;
+    /* Fallback height when not a snap target (inner pages). */
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: var(--gutter);
+  }
+  /* When snapping (homepage), the global rule already sets 100svh, but make
+     sure the inner column truly centers in that height. */
+  html.page-home .contact {
+    min-height: 100svh;
+  }
+
+  .contact__inner {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: clamp(18px, 2.4vw, 32px);
+  }
+
+  .contact__label {
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(232, 232, 232, 0.55);
+  }
+
+  .contact__email {
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: clamp(18px, 2.2vw, 28px);
+    font-weight: 400;
+    letter-spacing: 0;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    padding-bottom: 4px;
+    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+    /* Break gracefully on narrow viewports rather than overflowing. */
+    word-break: break-all;
+    max-width: 100%;
+  }
+  .contact__email:hover {
+    color: #ffffff;
+    border-color: #ffffff;
+  }
+
+  .contact__socials {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(18px, 2.6vw, 32px);
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: lowercase;
+    color: rgba(232, 232, 232, 0.75);
+  }
+  .contact__socials a { color: inherit; }
+  .contact__socials a:hover { color: #ffffff; }
+
+  .contact__copy {
+    margin-top: clamp(16px, 2vw, 28px);
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: lowercase;
+    color: rgba(232, 232, 232, 0.5);
+  }
+</style>

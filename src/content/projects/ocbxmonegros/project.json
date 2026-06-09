@@ -1,0 +1,21 @@
+{
+  "slug": "ocbxmonegros",
+  "title": "OCB x Monegros 2025 by chronica",
+  "artist": "OCB",
+  "track": "Monegros 2025",
+  "year": "2025",
+  "location": "Barcelona",
+  "category": ["commercials"],
+  "roles": ["directed", "art directed", "produced", "cinematography"],
+  "team": {
+    "director": ["Kira Uteshkaliev"],
+    "dp": ["Freddy Film"],
+    "producer": ["Kira Uteshkaliev"],
+    "productionDesigner": ["Natalia Poczatek"]
+  },
+  "video": {
+    "youtube": "https://www.youtube.com/watch?v=owd_UWqkOBA",
+    "bunny": "",
+    "btsYoutube": ""
+  }
+}

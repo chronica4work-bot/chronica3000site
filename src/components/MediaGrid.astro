@@ -1,0 +1,57 @@
+---
+/**
+ * Generic responsive image grid. Used for stills and BTS galleries.
+ * Conditional rendering — returns nothing if `items` is empty.
+ */
+
+export interface Props {
+  items: string[];
+  heading: string;          // "stills" or "bts"
+  altPrefix: string;        // for alt text
+  aspectRatio?: string;     // CSS aspect-ratio for tiles
+}
+
+const { items, heading, altPrefix, aspectRatio = '3 / 2' } = Astro.props;
+---
+
+{items.length > 0 && (
+  <section class="grid" aria-label={heading}>
+    <h2 class="grid__heading">{heading}</h2>
+    <ul class="grid__items" style={`--ar: ${aspectRatio};`}>
+      {items.map((src, i) => (
+        <li>
+          <a href={src} target="_blank" rel="noopener noreferrer">
+            <img src={src} alt={`${altPrefix} — ${i + 1}`} loading="lazy" />
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .grid {
+    padding-block: clamp(40px, 5vw, 72px);
+    border-top: 1px solid var(--c-rule);
+  }
+  .grid__heading {
+    font-size: var(--fs-xs);
+    letter-spacing: var(--tracking-xwide);
+    text-transform: uppercase;
+    color: var(--c-ink-mute);
+    margin-bottom: clamp(20px, 2.4vw, 32px);
+  }
+  .grid__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: clamp(10px, 1.2vw, 18px);
+  }
+  .grid__items img {
+    width: 100%;
+    aspect-ratio: var(--ar);
+    object-fit: cover;
+    border: 1px solid var(--c-rule);
+    transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+  }
+  .grid__items a:hover img { border-color: var(--c-mark); transform: scale(1.005); }
+</style>

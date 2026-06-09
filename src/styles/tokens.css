@@ -1,0 +1,73 @@
+/* ============================================================
+   CHRONICA3000 — design tokens
+   Editorial monochrome. No light theme. Cinematic.
+   ============================================================ */
+
+:root {
+  /* ---- Color ---- */
+  --c-bg:        #000000; /* pure black — one continuous cinema screen */
+  --c-bg-soft:   #111111;
+  --c-ink:       #f4f1ec; /* warm off-white, editorial */
+  --c-ink-soft:  #c8c5c0;
+  --c-ink-mute:  #6f6c66;
+  --c-rule:      #1f1f1f;
+  --c-rule-hard: #2a2a2a;
+  --c-mark:      #ffffff; /* hover marker / pure white accents only */
+
+  /* ---- Typography ----
+     Roboto Mono is the entire visual language. Both --font-sans and --font-mono
+     resolve to the same stack so legacy component references stay correct. */
+  --font-sans: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Fluid type scale — clamp(min, ideal, max).
+     Ideal scales with viewport width so layout stays balanced from mobile to ultrawide. */
+  --fs-micro:   clamp(10px, 0.72vw, 12px);
+  --fs-xs:      clamp(11px, 0.82vw, 13px);
+  --fs-sm:      clamp(13px, 0.95vw, 15px);
+  --fs-body:    clamp(15px, 1.05vw, 17px);
+  --fs-lead:    clamp(17px, 1.4vw, 22px);
+  --fs-title-s: clamp(20px, 2vw, 28px);
+  --fs-title:   clamp(28px, 3.4vw, 52px);
+  --fs-display: clamp(40px, 6.2vw, 96px);
+
+  --lh-tight:  1.05;
+  --lh-snug:   1.2;
+  --lh-base:   1.45;
+  --lh-loose:  1.6;
+
+  --tracking-wide: 0.08em;
+  --tracking-xwide: 0.16em;
+
+  /* ---- Spacing ---- */
+  --gutter:     clamp(16px, 4vw, 56px);
+  --gap-s:      8px;
+  --gap-m:      16px;
+  --gap-l:      32px;
+  --gap-xl:     64px;
+  --section-y:  clamp(64px, 9vw, 140px);
+  --max-w:      1680px;
+
+  /* ---- Motion ---- */
+  --ease:        cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast:    180ms;
+  --dur:         320ms;
+  --dur-slow:    640ms;
+
+  /* ---- Layers ---- */
+  --z-base:    0;
+  --z-veil:    5;
+  --z-content: 10;
+  --z-nav:     100;
+  --z-modal:   200;
+}
+
+/* Respect user motion preference — disable transitions/animations. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur:      0ms;
+    --dur-slow: 0ms;
+  }
+}

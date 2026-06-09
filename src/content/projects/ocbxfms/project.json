@@ -1,0 +1,20 @@
+{
+  "slug": "ocbxfms",
+  "title": "OCB x FMS rap battle Madrid 2025",
+  "artist": "OCB",
+  "track": "FMS rap battle Madrid 2025",
+  "year": "2025",
+  "location": "Barcelona",
+  "category": ["commercials"],
+  "roles": ["directed", "produced", "cinematography"],
+  "team": {
+    "director": ["Kira Uteshkaliev"],
+    "dp": ["Freddy Film"],
+    "producer": ["Kira Uteshkaliev", "Arnau Tango"]
+  },
+  "video": {
+    "youtube": "https://www.youtube.com/watch?v=of_-JfPtNFU",
+    "bunny": "",
+    "btsYoutube": ""
+  }
+}

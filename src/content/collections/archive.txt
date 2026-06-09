@@ -1,0 +1,10 @@
+# Archive page — projects that appear ONLY in /archive (not on homepage, not on /works).
+# Use this for older or quieter work that has a folder/page but shouldn't surface elsewhere.
+# (Anything in highlights.txt or works.txt is also in /archive automatically — don't list it twice.)
+# One slug per line. Line order = position in the archive list.
+# Lines starting with # are comments. Blank lines are ignored.
+
+# (no archive-only projects yet)
+#
+# For purely typographic mentions that have no folder and no page
+# (e.g. lost or unreleased work), use src/data/archiveExtras.ts instead.

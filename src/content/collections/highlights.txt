@@ -1,0 +1,11 @@
+# Homepage highlights — the cinematic sections you scroll through on /.
+# One project slug per line. The line ORDER is the order they appear on the homepage.
+# Every project listed here also automatically appears in /works and /archive.
+# Lines starting with # are comments and are ignored. Blank lines are ignored.
+
+fullmoon
+ocbxfms
+pinkblues
+tomsorry
+only1heart
+psychodreams2

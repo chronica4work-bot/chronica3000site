@@ -1,0 +1,401 @@
+---
+/**
+ * Unified Project Page Template — Tom Sorry visual reference.
+ *
+ * Structure (every section is conditional on its source data):
+ *   1. Title                                                    (always)
+ *   2. Subtitle / directed-by                                   (if main-credits.md has director-role line[s])
+ *   3. Main video                                               (if main.mp4 / bunny / youtube / poster exists)
+ *   4. Main credits  +  year, location                          (if either has data)
+ *   5. +credits accordion                                       (if credits.md has content)
+ *   6. Stills (ALWAYS VISIBLE — no accordion)                   (if stills/ has images)
+ *   7. [BTS] permanent section                                  (if bts/ has images)
+ *   8. BTS YouTube                                              (if video.btsYoutube is set)
+ *   9. External link buttons                                    (if links/*.txt exist beyond youtube)
+ *  10. Contact footer                                           (global)
+ *
+ * Notes:
+ *   - Main video is 10% smaller than the content column (1260px max vs 1400px).
+ *   - Stills are no longer behind an accordion — always visible when they exist.
+ *   - Subtitle aggregates ALL director-related credits (e.g. two "director" rows
+ *     join into "director Kira & Gosha" instead of just the first).
+ *   - Only +credits is an accordion now.
+ *
+ * Architecture preserved: nav, back behaviour, routing, collections,
+ * folder-based content, asset discovery, credits parser, schema.
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import ContactSection from '../components/ContactSection.astro';
+import ProjectVideo from '../components/ProjectVideo.astro';
+import LinkButtons from '../components/LinkButtons.astro';
+import { getCollection } from 'astro:content';
+import { getProjectMedia, youtubePoster } from '../lib/projectAssets';
+import { readProjectFile, readAllLinks } from '../lib/projectFiles';
+import { parseCredits, creditsHaveContent } from '../lib/credits';
+
+export async function getStaticPaths() {
+  const all = await getCollection('projects', ({ data }) => data.hasPage !== false && data.draft !== true);
+  return all.map((p) => ({ params: { slug: p.data.slug }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const d = project.data;
+
+const media = getProjectMedia(d.slug);
+const allLinks = readAllLinks(d.slug);
+
+const mainRaw = readProjectFile(d.slug, 'main-credits.md');
+const fullRaw = readProjectFile(d.slug, 'credits.md');
+const mainCredits = mainRaw ? parseCredits(mainRaw) : null;
+const fullCredits = fullRaw ? parseCredits(fullRaw) : null;
+const hasMainCredits = mainCredits ? creditsHaveContent(mainCredits) : false;
+const hasFullCredits = fullCredits ? creditsHaveContent(fullCredits) : false;
+
+const ytUrl = d.video.youtube || allLinks.youtube || '';
+const btsYtUrl = d.video.btsYoutube || allLinks['bts-youtube'] || '';
+
+const externalLinks: Record<string, string> = {};
+for (const [k, v] of Object.entries(allLinks)) {
+  if (k === 'youtube' || k === 'bts-youtube') continue;
+  externalLinks[k] = v;
+}
+
+const poster = media.poster ?? youtubePoster(ytUrl) ?? undefined;
+const showVideoBlock = Boolean(media.mainVideo || d.video.bunny || ytUrl || poster);
+
+// Subtitle — aggregate ALL director-related credits into one line.
+// e.g. two "director" rows render as "director Kira Uteshkaliev & Gosha Mirchuk".
+const directorCredits = hasMainCredits
+  ? mainCredits!.credits.filter((c) => /^direct(ed|or)/.test(c.role.toLowerCase()))
+  : [];
+const directorRole = directorCredits[0]?.role.toLowerCase() ?? '';
+const directorNames = directorCredits.flatMap((c) => c.names);
+const showSubtitle = directorCredits.length > 0;
+
+const coords = [d.year, d.location].filter(Boolean).join(', ');
+const showMeta = hasMainCredits || coords;
+---
+
+<BaseLayout title={d.title} description={`${d.title} — ${d.year} · chronica 3000`}>
+  <Nav variant="solid" showBack backFallback="/works" />
+
+  <main class="project">
+    <header class="project__header">
+      <h1 class="project__title">{d.title}</h1>
+      {showSubtitle && (
+        <p class="project__subtitle"><span class="project__subtitle-role">{directorRole}</span> {directorNames.join(' & ')}</p>
+      )}
+    </header>
+
+    {showVideoBlock && (
+      <div class="project__video">
+        <ProjectVideo
+          mainVideo={media.mainVideo}
+          bunny={d.video.bunny}
+          youtube={ytUrl}
+          poster={poster}
+          title={d.title}
+        />
+      </div>
+    )}
+
+    {showMeta && (
+      <section class={hasMainCredits ? 'project__meta' : 'project__meta project__meta--coords-only'}>
+        {hasMainCredits && (
+          <dl class="project__credits">
+            {mainCredits!.credits.map((c) => (
+              <div class="project__credit">
+                <dt>{c.role.toLowerCase()}</dt>
+                <dd>{c.names.join(', ')}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        {coords && <p class="project__coords">{coords}</p>}
+      </section>
+    )}
+
+    {hasFullCredits && (
+      <details class="project__accordion project__accordion--credits">
+        <summary class="project__accordion-summary">+credits</summary>
+        <div class="project__accordion-body">
+          <dl class="project__credits">
+            {fullCredits!.credits.map((c) => (
+              <div class="project__credit">
+                <dt>{c.role.toLowerCase()}</dt>
+                <dd>{c.names.join(', ')}</dd>
+              </div>
+            ))}
+            {fullCredits!.specialThanks.length > 0 && (
+              <div class="project__credit project__credit--thanks">
+                <dt>special thanks</dt>
+                <dd>{fullCredits!.specialThanks.join(', ')}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      </details>
+    )}
+
+    {btsYtUrl && (
+      <section class="project__bts-video">
+        <h2 class="project__section-label">[BTS video]</h2>
+        <div class="project__bts-video-frame">
+          <ProjectVideo
+            youtube={btsYtUrl}
+            title={`${d.title} — BTS`}
+          />
+        </div>
+      </section>
+    )}
+
+    {media.stills.length > 0 && (
+      <section class="project__stills">
+        <h2 class="project__section-label">[stills]</h2>
+        <ol class="project__gallery">
+          {media.stills.map((src, i) => (
+            <li>
+              <a href={src} target="_blank" rel="noopener noreferrer">
+                <img src={src} alt={`${d.title} — still ${i + 1}`} loading="lazy" />
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    {media.bts.length > 0 && (
+      <section class="project__bts">
+        <h2 class="project__section-label">[BTS]</h2>
+        <ol class="project__gallery">
+          {media.bts.map((src, i) => (
+            <li>
+              <a href={src} target="_blank" rel="noopener noreferrer">
+                <img src={src} alt={`${d.title} — bts ${i + 1}`} loading="lazy" />
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    {Object.keys(externalLinks).length > 0 && (
+      <div class="project__links">
+        <LinkButtons links={externalLinks} />
+      </div>
+    )}
+
+    <ContactSection />
+  </main>
+</BaseLayout>
+
+<script is:inline>
+  (function () {
+    var list = document.querySelectorAll('.project__accordion');
+    list.forEach(function (d) {
+      d.addEventListener('toggle', function () {
+        if (!d.open) return;
+        list.forEach(function (o) { if (o !== d && o.open) o.open = false; });
+      });
+    });
+  })();
+</script>
+
+<style>
+  /* === Project Template — Tom Sorry reference =============================
+     Roboto Mono only. 20/31/600 title. 16/25 body. 22 credit row. 25 rhythm.
+     Content column 1400px max. Video block 1260px (10% smaller). */
+
+  .project {
+    background: #000000;
+    color: #ffffff;
+    padding-top: clamp(96px, 14vh, 160px);
+    padding-bottom: 0;
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-size: 16px;
+    line-height: 25px;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  /* The video/poster width is the MASTER alignment container.
+     All text — title, subtitle, credits, year/location, stills, BTS — aligns
+     to the same left and right edges as the video. */
+  .project > * {
+    width: 100%;
+    max-width: 1260px;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    box-sizing: border-box;
+  }
+  .project > .contact {
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  /* Vertical rhythm between top-level sections. */
+  .project > * + *           { margin-top: 50px; }
+  .project > .project__video { margin-top: 46px; }
+  .project > .project__meta  { margin-top: 25px; }
+  .project__accordion + .project__accordion { margin-top: 0; }
+  .project > .contact        { margin-top: 80px; }
+
+  /* ---------- Header ---------- */
+
+  .project__title {
+    font-family: inherit;
+    font-size: 20px;
+    line-height: 31px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: #ffffff;
+    max-width: 60ch;
+  }
+  .project__subtitle {
+    margin: 0;
+    font-size: 16px;
+    line-height: 25px;
+    font-weight: 500;
+    color: #ffffff;
+  }
+  .project__subtitle-role { font-weight: 500; }
+
+  /* ---------- Video block ---------- */
+
+  .project__video :global(.pv) {
+    background: #000000;
+    border: 0;
+    aspect-ratio: 16 / 9;
+  }
+
+  /* ---------- Meta row ---------- */
+
+  .project__meta {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: baseline;
+  }
+  .project__meta--coords-only { grid-template-columns: 1fr; }
+  .project__meta--coords-only .project__coords { text-align: left; }
+  .project__coords {
+    margin: 0;
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 400;
+    color: #ffffff;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ---------- Credits ---------- */
+
+  .project__credits { display: block; margin: 0; padding: 0; }
+  .project__credit  { display: block; margin: 0; line-height: 22px; }
+  .project__credit dt {
+    display: inline;
+    font-family: inherit;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  .project__credit dd {
+    display: inline;
+    margin: 0;
+    font-family: inherit;
+    font-weight: 400;
+    color: #ffffff;
+  }
+  .project__credit dd::before { content: ' '; }
+  .project__credit--thanks { margin-top: 22px; }
+
+  /* ---------- Accordion (only +credits now) ---------- */
+
+  .project__accordion-summary {
+    list-style: none;
+    cursor: pointer;
+    display: inline-block;
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 25px;
+    font-weight: 500;
+    color: #ffffff;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    user-select: none;
+    transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .project__accordion-summary::-webkit-details-marker { display: none; }
+  .project__accordion-summary::marker { content: ''; }
+  .project__accordion-summary:hover { opacity: 0.75; }
+  .project__accordion-body { margin-top: 25px; }
+  .project__accordion[open] .project__accordion-body { margin-bottom: 25px; }
+
+  /* ---------- Stills, BTS, BTS-video section labels ---------- */
+
+  .project__section-label {
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 25px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 25px 0;
+  }
+
+  /* ---------- Gallery (stills + bts) ---------- */
+
+  .project__gallery {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 21px;
+    row-gap: 25px;
+  }
+  .project__gallery img {
+    width: 100%;
+    aspect-ratio: 374 / 259;
+    object-fit: cover;
+    display: block;
+    transition: opacity 200ms ease;
+  }
+  .project__gallery a:hover img { opacity: 0.85; }
+
+  /* ---------- BTS YouTube frame (uses ProjectVideo internally) ---------- */
+
+  .project__bts-video-frame :global(.pv) {
+    background: #000000;
+    border: 0;
+    aspect-ratio: 16 / 9;
+  }
+
+  /* ---------- Responsive ---------- */
+
+  @media (max-width: 900px) {
+    .project__gallery {
+      grid-template-columns: repeat(2, 1fr);
+      column-gap: 16px;
+      row-gap: 20px;
+    }
+  }
+  @media (max-width: 600px) {
+    .project__meta {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .project__coords { text-align: left; }
+    .project__gallery {
+      grid-template-columns: 1fr;
+      column-gap: 0;
+      row-gap: 16px;
+    }
+    .project > * + *           { margin-top: 40px; }
+    .project > .project__video { margin-top: 36px; }
+    .project > .project__meta  { margin-top: 25px; }
+  }
+</style>

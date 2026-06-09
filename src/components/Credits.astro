@@ -1,0 +1,170 @@
+---
+/**
+ * Credits block — compact main credits always visible, optional expandable full list.
+ *
+ *   main-credits.md  →  shown at the top of the credits block (short, ~3-5 lines)
+ *   credits.md       →  shown inside a "+ credits" accordion when the user expands
+ *
+ * Both files use the same parser (lib/credits.ts). Both are optional.
+ * If neither exists, this component returns nothing — no empty section.
+ *
+ * Typography rule: roles lowercase on render, names verbatim.
+ */
+
+import type { ParsedCredits } from '../lib/credits';
+import { creditsHaveContent } from '../lib/credits';
+
+export interface Props {
+  mainCredits?: ParsedCredits | null;
+  fullCredits?: ParsedCredits | null;
+}
+
+const { mainCredits, fullCredits } = Astro.props;
+const hasMain = mainCredits ? creditsHaveContent(mainCredits) : false;
+const hasFull = fullCredits ? creditsHaveContent(fullCredits) : false;
+---
+
+{(hasMain || hasFull) && (
+  <section class="credits" aria-label="Credits">
+    {hasMain && (
+      <dl class="credits__list credits__list--main">
+        {mainCredits!.credits.map((c) => (
+          <div class="credits__row">
+            <dt class="credits__role">{c.role.toLowerCase()}</dt>
+            <dd class="credits__names">{c.names.join(', ')}</dd>
+          </div>
+        ))}
+        {mainCredits!.specialThanks.length > 0 && (
+          <div class="credits__row">
+            <dt class="credits__role">special thanks</dt>
+            <dd class="credits__names">{mainCredits!.specialThanks.join(', ')}</dd>
+          </div>
+        )}
+      </dl>
+    )}
+
+    {hasFull && (
+      <details class="credits__full">
+        <summary>
+          <span class="credits__mark" aria-hidden="true">+</span>
+          <span class="credits__mark credits__mark--open" aria-hidden="true">−</span>
+          <span>credits</span>
+        </summary>
+
+        <div class="credits__panel">
+          <dl class="credits__list">
+            {fullCredits!.credits.map((c) => (
+              <div class="credits__row">
+                <dt class="credits__role">{c.role.toLowerCase()}</dt>
+                <dd class="credits__names">{c.names.join(', ')}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {fullCredits!.specialThanks.length > 0 && (
+            <div class="credits__thanks">
+              <span class="credits__role">special thanks</span>
+              <p class="credits__names">{fullCredits!.specialThanks.join(', ')}</p>
+            </div>
+          )}
+        </div>
+      </details>
+    )}
+  </section>
+)}
+
+<style>
+  .credits {
+    padding-block: clamp(40px, 5vw, 72px);
+    border-top: 1px solid var(--c-rule);
+    display: grid;
+    gap: clamp(24px, 3vw, 40px);
+  }
+
+  .credits__list {
+    display: grid;
+    gap: clamp(8px, 1vw, 14px);
+  }
+  .credits__list--main { gap: 6px; }
+
+  .credits__row {
+    display: grid;
+    grid-template-columns: minmax(160px, 22ch) 1fr;
+    gap: clamp(16px, 2vw, 32px);
+    align-items: baseline;
+  }
+
+  .credits__role {
+    font-size: var(--fs-sm);
+    color: var(--c-ink-mute);
+    text-transform: lowercase;
+    letter-spacing: 0.01em;
+  }
+  .credits__names {
+    font-size: var(--fs-body);
+    color: var(--c-ink);
+    line-height: var(--lh-snug);
+  }
+
+  /* ---------- Expandable full credits ---------- */
+
+  .credits__full {
+    border-top: 1px solid var(--c-rule);
+    padding-top: clamp(20px, 2.4vw, 32px);
+  }
+
+  .credits__full summary {
+    list-style: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--fs-sm);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-ink-soft);
+    padding: 6px 10px;
+    border: 1px solid var(--c-rule-hard);
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  }
+  .credits__full summary::-webkit-details-marker { display: none; }
+  .credits__full summary:hover {
+    color: var(--c-mark);
+    border-color: var(--c-mark);
+  }
+
+  .credits__mark {
+    font-family: var(--font-mono);
+    width: 1ch;
+    display: inline-block;
+    text-align: center;
+  }
+  .credits__mark--open { display: none; }
+  .credits__full[open] .credits__mark { display: none; }
+  .credits__full[open] .credits__mark--open { display: inline-block; }
+
+  .credits__panel {
+    padding-top: clamp(20px, 2.4vw, 32px);
+  }
+
+  .credits__thanks {
+    margin-top: clamp(24px, 3vw, 40px);
+    padding-top: clamp(20px, 2.4vw, 32px);
+    border-top: 1px solid var(--c-rule);
+    display: grid;
+    grid-template-columns: minmax(160px, 22ch) 1fr;
+    gap: clamp(16px, 2vw, 32px);
+  }
+  .credits__thanks p {
+    font-size: var(--fs-sm);
+    line-height: var(--lh-base);
+    color: var(--c-ink-soft);
+  }
+
+  @media (max-width: 720px) {
+    .credits__row,
+    .credits__thanks {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+  }
+</style>

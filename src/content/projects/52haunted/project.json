@@ -1,0 +1,23 @@
+{
+  "slug": "52haunted",
+  "title": "ALBLAK 52, KIZARU — 52 & HAUNTED",
+  "artist": "ALBLAK 52, KIZARU",
+  "track": "52 & HAUNTED",
+  "year": "2024",
+  "location": "Barcelona",
+  "category": ["music video"],
+  "roles": ["directed", "produced", "cinematography", "production design", "edit"],
+  "team": {
+    "director": ["Kira Uteshkaliev", "Gosha Mirchuk"],
+    "dp": ["Gosha Mirchuk"],
+    "producer": ["Ivan Sokolovskiy"],
+    "productionDesigner": ["Kira Uteshkaliev"],
+    "editor": ["Kira Uteshkaliev", "Gosha Mirchuk"],
+    "colorist": ["Andrey Garny"]
+  },
+  "video": {
+    "youtube": "https://www.youtube.com/watch?v=AGXxYmFrJc0",
+    "bunny": "",
+    "btsYoutube": ""
+  }
+}

@@ -1,0 +1,61 @@
+# ────────────────────────────────────────────────────────────────────
+# Chronica3000 — what NOT to commit.
+#
+# Rule of thumb: anything that the production build doesn't need, or
+# anything we wouldn't survive losing from git, stays out.
+# ────────────────────────────────────────────────────────────────────
+
+# build output
+dist/
+.astro/
+
+# deps
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# editor / OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# reference (kept locally, not deployed)
+_reference_old/
+
+# ────────────────────────────────────────────────────────────────────
+# Master files & working scratch — NEVER commit.
+# These live in the working folder for editorial convenience but the
+# site doesn't read from them. If anything in here is needed by the
+# site, copy it into public/ or src/content/projects/<slug>/ first.
+# ────────────────────────────────────────────────────────────────────
+CHRONICA (MAIN)/
+BACKGROUND REEL MAIN/
+chronica loading video white logo black background.mov
+CHRONICA WHITE LOGO.png
+chronica black LOGO.png
+chronicawhite LOGO — copy.png
+chronicawhite*copy.png
+
+# Empty stub folders left over from the scaffold
+assets/
+
+# Spreadsheet — kept local as the editorial source of truth; the
+# website reads from src/content/projects/<slug>/project.json instead.
+*.xlsx
+*.xls
+*.numbers
+
+# Just in case
+*.psd
+*.ai
+*.prproj

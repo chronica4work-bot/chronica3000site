@@ -1,0 +1,19 @@
+{
+  "slug": "my-new-project",
+  "title": "ARTIST — TRACK",
+  "artist": "ARTIST",
+  "track": "TRACK",
+  "year": "2026",
+  "location": "Barcelona",
+  "category": ["music video"],
+  "roles": ["directed", "produced"],
+  "team": {
+    "director": ["First Name Last Name"],
+    "dp": ["First Name Last Name"],
+    "producer": ["First Name Last Name"]
+  },
+  "video": {
+    "youtube": "",
+    "bunny": ""
+  }
+}

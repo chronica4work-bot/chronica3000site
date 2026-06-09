@@ -1,0 +1,255 @@
+---
+/**
+ * Floating nav for CHRONICA3000.
+ *
+ * Layout:
+ *   [ chronica logo ]   [ ← back ]                              [ nav links ]
+ *           left          left (inner pages only)                   right
+ *
+ * Variants:
+ *   - variant="float"  — used on homepage; transparent, no black bar, no border.
+ *   - variant="solid"  — used on inner pages; black background, subtle bottom rule.
+ *
+ * Current page is auto-detected and that link is suppressed.
+ * Archive stays in the nav per brief.
+ */
+
+export interface Props {
+  variant?: 'float' | 'solid';
+  showBack?: boolean;
+  backFallback?: string;
+}
+
+const { variant = 'solid', showBack = false, backFallback = '/works' } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+const links: Array<{ label: string; href: string; match: (p: string) => boolean }> = [
+  { label: 'works',      href: '/works',    match: (p) => p === '/works' },
+  { label: 'archive',    href: '/archive',  match: (p) => p === '/archive' },
+  { label: 'contact us', href: '/#contact', match: (_p) => false },
+];
+const visibleLinks = links.filter((l) => !l.match(path));
+const isHome = path === '/';
+---
+
+<header class:list={['nav', variant === 'float' ? 'is-float' : 'is-solid']}>
+  <div class="nav__inner">
+    <div class="nav__left">
+      <a href="/" class="nav__logo" aria-current={isHome ? 'page' : undefined} aria-label="chronica — home">
+        <img src="/img/chronica-mark.png" alt="chronica" width="60" height="14" />
+      </a>
+      {showBack && (
+        <a href={backFallback} class="nav__back" data-back-link data-fallback={backFallback}>
+          <span aria-hidden="true">←</span>
+          <span class="nav__back-text">back</span>
+        </a>
+      )}
+    </div>
+
+    <nav class="nav__links" aria-label="Primary">
+      <ul>
+        {visibleLinks.map((l) => (
+          <li><a href={l.href}>{l.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+{showBack && (
+  <script is:inline>
+    (function () {
+      var KEY = 'chronica:lastList';
+      var link = document.querySelector('[data-back-link]');
+      if (!link) return;
+      var fallback = link.getAttribute('data-fallback') || '/works';
+      var stored = null;
+      try { stored = sessionStorage.getItem(KEY); } catch (e) {}
+
+      var target = stored;
+      if (!target && document.referrer) {
+        try {
+          var u = new URL(document.referrer);
+          if (u.origin === location.origin && /^\/(works|archive|$)/.test(u.pathname)) {
+            target = u.pathname;
+          }
+        } catch (e) {}
+      }
+      if (target) link.setAttribute('href', target);
+
+      link.addEventListener('click', function (e) {
+        if (history.length > 1 && document.referrer) {
+          try {
+            var u = new URL(document.referrer);
+            if (u.origin === location.origin && /^\/(works|archive|$)/.test(u.pathname)) {
+              e.preventDefault();
+              history.back();
+            }
+          } catch (err) {}
+        }
+      });
+    })();
+  </script>
+)}
+
+<script is:inline>
+  /*
+   * "contact us" cinematic glide.
+   *
+   * Works on every page that renders a #contact element (homepage + all
+   * internal pages — ContactSection is rendered everywhere). Animates the
+   * scroll over ~600ms with a custom ease-in-out, temporarily disabling
+   * scroll-snap and CSS scroll-behavior so the homepage's mandatory snap
+   * doesn't drag the page through every intermediate section.
+   *
+   * If the current page doesn't have a #contact element, the click is left
+   * alone and the browser navigates to /#contact as a normal anchor link
+   * (the head script in BaseLayout handles the no-flash landing there).
+   *
+   * prefers-reduced-motion: bypass the animation and jump instantly.
+   */
+  (function () {
+    var DURATION = 600;            // ms — target 450-700
+    var animating = false;
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function glideTo(el) {
+      if (animating) return;
+      var targetY = el.getBoundingClientRect().top + window.scrollY;
+      var startY = window.scrollY;
+      var distance = targetY - startY;
+      if (Math.abs(distance) < 1) return;
+
+      animating = true;
+      var html = document.documentElement;
+      var prevSnap = html.style.scrollSnapType;
+      var prevBehavior = html.style.scrollBehavior;
+      html.style.scrollSnapType = 'none';        // free the scroll from snap during the glide
+      html.style.scrollBehavior = 'auto';        // we control the animation manually
+
+      var startTime = performance.now();
+      function step(now) {
+        var t = Math.min((now - startTime) / DURATION, 1);
+        window.scrollTo(0, startY + distance * easeInOutCubic(t));
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          html.style.scrollSnapType = prevSnap;  // snap re-enables, final position IS a snap point
+          html.style.scrollBehavior = prevBehavior;
+          animating = false;
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    document.querySelectorAll('a[href$="#contact"]').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        var target = document.getElementById('contact');
+        if (!target) return;                     // no local #contact → let the link navigate
+        e.preventDefault();
+
+        if (reduceMotion) {
+          target.scrollIntoView({ block: 'start' });
+        } else {
+          glideTo(target);
+        }
+        try { history.replaceState(null, '', '#contact'); } catch (e) {}
+      });
+    });
+  })();
+</script>
+
+<style>
+  .nav {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: var(--z-nav);
+    padding: clamp(16px, 1.8vw, 24px) var(--gutter);
+    transition: background var(--dur) var(--ease);
+  }
+
+  /* Both variants float over the page now — no bar, no border, no background.
+     Float variant keeps a gradient veil for legibility over the homepage reel.
+     Solid variant (inner pages) is pure transparent — page background is #000
+     so nav text reads cleanly without any chrome. */
+  .nav.is-float {
+    background: transparent;
+    background-image: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  .nav.is-solid {
+    background: transparent;
+  }
+
+  .nav__inner {
+    width: 100%;
+    max-width: var(--max-w);
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--gap-m);
+  }
+
+  .nav__left {
+    display: flex;
+    align-items: center;
+    gap: clamp(14px, 1.8vw, 28px);
+    min-height: 1.2em;
+  }
+
+  /* Logo — small white wordmark. The PNG is white-on-transparent so it
+     sits cleanly on any frame of the reel. */
+  .nav__logo {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+  }
+  .nav__logo img {
+    display: block;
+    height: 14px;
+    width: auto;
+    object-fit: contain;
+    transition: opacity var(--dur-fast) var(--ease);
+  }
+  .nav__logo:hover img { opacity: 0.8; }
+  .nav__logo:focus-visible { outline: 1px solid #fff; outline-offset: 6px; }
+
+  .nav__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-sm);
+    color: rgba(232, 232, 232, 0.75);
+    text-transform: lowercase;
+  }
+  .nav__back:hover { color: #fff; }
+
+  .nav__links ul {
+    display: flex;
+    align-items: center;
+    gap: clamp(18px, 2.4vw, 36px);
+  }
+  .nav__links a {
+    font-size: var(--fs-sm);
+    color: rgba(232, 232, 232, 0.75);
+    text-transform: lowercase;
+    letter-spacing: 0;
+  }
+  .nav__links a:hover { color: #fff; }
+
+  @media (max-width: 520px) {
+    .nav__back-text { display: none; }
+    .nav__links ul { gap: 14px; }
+    .nav__left { gap: 12px; }
+    .nav__logo img { height: 12px; }
+  }
+</style>

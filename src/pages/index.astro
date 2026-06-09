@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import ReelHero from '../components/ReelHero.astro';
+import HighlightedWorks from '../components/HighlightedWorks.astro';
+import ContactSection from '../components/ContactSection.astro';
+---
+
+<BaseLayout title="chronica 3000" pageClass="page-home">
+  <Nav variant="float" />
+  <main>
+    <ReelHero />
+    <HighlightedWorks />
+    <ContactSection />
+  </main>
+</BaseLayout>

@@ -1,0 +1,9 @@
+# Works page — projects that appear on /works but NOT on the homepage.
+# (Anything in highlights.txt is also on /works automatically — don't list it twice.)
+# One slug per line. Line order = grid order within their category.
+# Lines starting with # are comments. Blank lines are ignored.
+
+mastersofrosinzisdead
+ocbxmonegros
+52haunted
+mastersofrosinnewyork

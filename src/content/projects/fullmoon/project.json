@@ -1,0 +1,24 @@
+{
+  "slug": "fullmoon",
+  "title": "KIZARU — FULL MOON",
+  "artist": "KIZARU",
+  "track": "FULL MOON",
+  "year": "2025",
+  "location": "Barcelona",
+  "category": ["music video"],
+  "roles": ["directed", "produced", "production design"],
+  "team": {
+    "director": ["Kira Uteshkaliev"],
+    "dp": ["Gosha Mirchuk"],
+    "producer": ["Andrei Dzyakau"],
+    "productionDesigner": ["Kira Uteshkaliev"],
+    "stylist": ["Garazi Cortazar Abad"],
+    "editor": ["Nikita Glechikov"],
+    "colorist": ["Gosha Mirchuk"]
+  },
+  "video": {
+    "youtube": "https://www.youtube.com/watch?v=oSPsHY6q520",
+    "bunny": "",
+    "btsYoutube": "https://www.youtube.com/watch?v=mzvLwX13KnU&t=1s"
+  }
+}

@@ -1,0 +1,284 @@
+---
+/**
+ * Homepage highlights — Tilda-correlated fullscreen sections.
+ *
+ * Each featured project becomes a <section class="highlight"> sized to 100svh
+ * by the .page-home rule. Inside, two visual layers:
+ *
+ *   1. Poster — <img> with object-fit: cover. Loads first, carries the section
+ *      until the video is ready (or forever, on reduced-motion / no-asset).
+ *   2. Motion loop (optional) — <video muted loop playsinline> sourced from
+ *      hover.mp4 (preferred — same asset used on /works) or highlight.mp4 as
+ *      a legacy fallback. Stacked above the poster, opacity 0 → 1 once the
+ *      first frame is decoded. Loaded LAZILY via IntersectionObserver so the
+ *      browser doesn't fetch 6× heavy MP4s up front:
+ *        - src is held back in `data-src`
+ *        - IntersectionObserver with rootMargin "150% 0px" assigns src + plays
+ *          once the section is within ~1.5 viewports of being visible
+ *        - On exit: pause + currentTime = 0 (keeps the poster visible
+ *          underneath, leaves the loaded buffer in memory for instant restart)
+ *        - prefers-reduced-motion: skip the observer entirely — poster only
+ *
+ * When a project has no video at all, the poster carries the section.
+ * When a project has no poster either, we fall back to the YouTube thumb
+ * (via bestPoster) and finally to a striped placeholder.
+ *
+ * Order = line order in src/content/collections/highlights.txt.
+ */
+
+import { loadFeatured } from '../lib/projects';
+import { bestPoster, getProjectMedia } from '../lib/projectAssets';
+
+const featured = await loadFeatured();
+---
+
+{featured.map((p, i) => {
+  const href = p.data.hasPage ? `/${p.data.slug}` : undefined;
+  const media = getProjectMedia(p.data.slug);
+  const poster = media.poster ?? bestPoster(p.data.slug, p.data.video.youtube);
+  // Prefer hover.mp4 (already produced for /works tile previews) so we don't
+  // need a second encode. Fall back to highlight.mp4 if a project ever ships
+  // a dedicated loop later.
+  const motionVideo = media.hoverVideo ?? media.highlightVideo;
+  const eager = i === 0;
+
+  const inner = (
+    <>
+      {poster ? (
+        <img class="highlight__media" src={poster} alt={p.data.title} loading={eager ? 'eager' : 'lazy'} />
+      ) : (
+        <div class="highlight__placeholder" aria-hidden="true">
+          <span>{p.data.slug}</span>
+        </div>
+      )}
+
+      {motionVideo && (
+        <video
+          class="highlight__video"
+          data-src={motionVideo}
+          muted
+          loop
+          playsinline
+          preload="none"
+          data-ready="false"
+          aria-hidden="true"
+        ></video>
+      )}
+
+      <div class="highlight__veil" aria-hidden="true"></div>
+      <div class="highlight__meta">
+        <h3 class="highlight__title">{p.data.title}</h3>
+        <p class="highlight__year">{p.data.year}</p>
+      </div>
+    </>
+  );
+
+  return (
+    <section class="highlight" id={`highlight-${p.data.slug}`} aria-label={p.data.title}>
+      {href ? (
+        <a class="highlight__link" href={href} data-source="featured" data-slug={p.data.slug}>{inner}</a>
+      ) : (
+        <div class="highlight__link is-static">{inner}</div>
+      )}
+    </section>
+  );
+})}
+
+<script is:inline>
+  /*
+   * Lazy motion loops for the homepage highlights.
+   *
+   * Goals:
+   *  - Don't fetch 6× MP4s on page load — only the section you're approaching.
+   *  - Once loaded, play while the section is visible, pause when it isn't.
+   *  - Keep the poster underneath so there's never a black frame.
+   *  - Reduced motion: poster only, no fetch, no observer.
+   *
+   * Implementation:
+   *  - Each <video> ships with `data-src` (not src) + preload="none".
+   *  - First intersection (rootMargin 150% — i.e. ~1.5 viewports out) assigns
+   *    `video.src = data-src` and calls load(). The data-ready flag flips on
+   *    `loadeddata` so the CSS fades the layer over the poster.
+   *  - Subsequent intersections just play(); exits pause() and reset to 0.
+   *  - .play() is wrapped in catch() to swallow autoplay-policy rejections
+   *    silently (Safari sometimes blocks even muted autoplay in BFCache cases).
+   */
+  (function () {
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      // Old browser fallback: just load + play everything eagerly.
+      document.querySelectorAll('.highlight__video').forEach(function (v) {
+        var src = v.getAttribute('data-src');
+        if (src && !v.src) v.src = src;
+        v.addEventListener('loadeddata', function () { v.setAttribute('data-ready', 'true'); }, { once: true });
+        try { v.play().catch(function () {}); } catch (e) {}
+      });
+      return;
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var v = entry.target;
+        if (entry.isIntersecting) {
+          // First contact: kick off the fetch.
+          var src = v.getAttribute('data-src');
+          if (src && !v.src) {
+            v.src = src;
+            v.addEventListener('loadeddata', function () {
+              v.setAttribute('data-ready', 'true');
+            }, { once: true });
+            try { v.load(); } catch (e) {}
+          }
+          try { v.play().catch(function () {}); } catch (e) {}
+        } else {
+          // Out of view: pause + rewind so the next entry starts clean.
+          // We deliberately do NOT clear src — the loaded buffer stays in
+          // memory so coming back is instant.
+          try { v.pause(); v.currentTime = 0; } catch (e) {}
+        }
+      });
+    }, {
+      // Start loading well before the section enters the viewport. 150%
+      // gives us ~1.5 viewports of lead time on both sides, which is enough
+      // to hide the load on normal scroll speeds without prefetching all 6.
+      rootMargin: '150% 0px',
+      threshold: 0.01,
+    });
+
+    document.querySelectorAll('.highlight__video').forEach(function (v) {
+      observer.observe(v);
+    });
+  })();
+
+  // On highlight click: stamp the URL hash to "#highlight-<slug>" via
+  // replaceState (no scroll-jump), so when the user hits Back from the
+  // project page the browser returns to "/#highlight-<slug>" and the
+  // head script lands the page directly on that section.
+  document.querySelectorAll('[data-source="featured"]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var slug = el.getAttribute('data-slug');
+      if (slug) {
+        try { history.replaceState(null, '', '/#highlight-' + slug); } catch (e) {}
+      }
+      try { sessionStorage.setItem('chronica:lastList', '/'); } catch (e) {}
+    });
+  });
+</script>
+
+<style>
+  /* Section sized by html.page-home main > section in global.css (100svh). */
+  .highlight {
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .highlight__link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: inherit;
+    position: absolute;
+    inset: 0;
+  }
+  .highlight__link.is-static { cursor: default; }
+
+  /* ---------- POSTER LAYER ---------- */
+  .highlight__media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 900ms var(--ease);
+    filter: saturate(0.94) contrast(1.02);
+    z-index: 0;
+  }
+  .highlight__link:hover .highlight__media { transform: scale(1.025); }
+
+  /* ---------- HIGHLIGHT VIDEO LAYER ---------- */
+  /* Sits above the poster. Starts at 0 opacity; JS flips data-ready when
+     the first frame is decoded; we fade to 1. */
+  .highlight__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 600ms var(--ease);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .highlight__video[data-ready="true"] {
+    opacity: 1;
+  }
+  /* Respect reduced-motion — keep the poster, hide the video. */
+  @media (prefers-reduced-motion: reduce) {
+    .highlight__video { display: none; }
+  }
+
+  .highlight__placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: rgba(232, 232, 232, 0.35);
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    background: repeating-linear-gradient(45deg, transparent 0 8px, rgba(255,255,255,0.025) 8px 9px);
+    z-index: 0;
+  }
+
+  /* Gradient veil — between video/poster and the title overlay. */
+  .highlight__veil {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 55%;
+    background: linear-gradient(
+      to bottom,
+      rgba(12, 12, 12, 0) 0%,
+      rgba(12, 12, 12, 0.72) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Minimal overlay — title + year only. */
+  .highlight__meta {
+    position: absolute;
+    left: 4vw;
+    bottom: 6vh;
+    z-index: 3;
+    max-width: min(800px, 80vw);
+  }
+
+  .highlight__title {
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: clamp(20px, 2.2vw, 32px);
+    font-weight: 500;
+    line-height: 1.18;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-wrap: balance;
+  }
+
+  .highlight__year {
+    margin-top: 4px;
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    opacity: 0.75;
+  }
+
+  @media (max-width: 480px) {
+    .highlight__title { font-size: 18px; }
+    .highlight__meta { bottom: clamp(40px, 7vh, 80px); }
+  }
+</style>

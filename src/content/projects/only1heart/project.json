@@ -1,0 +1,21 @@
+{
+  "slug": "only1heart",
+  "title": "ALBLAK 52, KIZARU — ONLY 1 HEART",
+  "artist": "ALBLAK 52, KIZARU",
+  "track": "ONLY 1 HEART",
+  "year": "2024",
+  "location": "Barcelona",
+  "category": ["music video"],
+  "roles": ["directed", "produced", "cinematography", "edit"],
+  "team": {
+    "director": ["Kira Uteshkaliev", "Gosha Mirchuk"],
+    "dp": ["Gosha Mirchuk"],
+    "producer": ["Ivan Sokolovskiy"],
+    "colorist": ["Andrey Provotorov"]
+  },
+  "video": {
+    "youtube": "https://www.youtube.com/watch?v=TzNBl7tgpaQ",
+    "bunny": "",
+    "btsYoutube": ""
+  }
+}

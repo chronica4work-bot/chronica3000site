@@ -1,0 +1,20 @@
+{
+  "slug": "tomsorry",
+  "title": "FRIENDLY THUG 52 NGG – Tom Sorry",
+  "artist": "FRIENDLY THUG 52 NGG",
+  "track": "Tom Sorry",
+  "year": "2025",
+  "location": "Saint-Petersburg",
+  "category": ["music video"],
+  "roles": ["directed", "produced", "cinematography"],
+  "team": {
+    "director": ["Gosha Mirchuk", "Nikolay Furtuna"],
+    "dp": ["Misha Shishebarov"],
+    "producer": ["Nikolay Furtuna"]
+  },
+  "video": {
+    "youtube": "https://www.youtube.com/watch?v=H8oub4eYJJY",
+    "bunny": "",
+    "btsYoutube": ""
+  }
+}
