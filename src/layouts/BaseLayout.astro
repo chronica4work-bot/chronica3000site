@@ -15,13 +15,19 @@ export interface Props {
 const {
   title = 'chronica 3000',
   description = 'barcelona based visual production collective. available worldwide.',
-  ogImage = '/img/chronica-logo.png',
+  // Square 1200×1200 social card (black bg + white chronica wordmark).
+  ogImage = '/img/chronica-og.png',
   matchChrome = true,
   pageClass,
 } = Astro.props;
 
 const fullTitle = title === 'chronica 3000' ? title : `${title} — chronica 3000`;
-const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://chronica3000.com').toString();
+// Absolute base for canonical + social image. Crawlers (Google, Twitter,
+// Slack, iMessage) require ABSOLUTE og:image / og:url URLs — relative paths
+// are why the preview image was blank.
+const site = Astro.site ?? 'https://chronica3000.com';
+const canonical = new URL(Astro.url.pathname, site).toString();
+const ogImageUrl = new URL(ogImage, site).toString();
 
 // The loading screen only mounts on the homepage. Inner pages don't have a
 // hero video to wait on, so a loader there would just feel like an obstacle.
@@ -40,14 +46,32 @@ const showLoader = pageClass === 'page-home';
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
 
+    {/* Open Graph (Facebook, LinkedIn, Slack, iMessage, Google) */}
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="chronica 3000" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={ogImage} />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:secure_url" content={ogImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="1200" />
+    <meta property="og:image:alt" content="chronica" />
 
-    <link rel="icon" type="image/png" href="/img/chronica-logo.png" />
+    {/* Twitter / X */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content="chronica" />
+
+    {/* Favicons + app icons. Small sizes use the "c" monogram (legible at
+        16–48px); apple-touch-icon is the same monogram on black. */}
+    <link rel="icon" type="image/png" sizes="48x48" href="/img/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
