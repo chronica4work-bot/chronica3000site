@@ -109,8 +109,10 @@ ol {
    iOS Safari notes:
    - The scroll container needs an EXPLICIT height for snap to anchor
      reliably (otherwise iOS sometimes treats overflow scroll as the body).
-   - Container and sections share the SAME viewport unit (100dvh) so
-     they reflow together when the toolbar shows/hides — no misalignment.
+   - The CONTAINER tracks the *visible* viewport (100dvh) so it always frames
+     exactly one screen, while each SECTION is sized to the *large* viewport
+     (100lvh, see below). Section >= container in every toolbar state, which
+     is what guarantees only one section is ever visible — no peek of the next.
    - We deliberately do NOT use `-webkit-overflow-scrolling: touch`
      (deprecated; on modern iOS it can BREAK snap behaviour).
    ===================================================== */
@@ -120,7 +122,9 @@ html.page-home {
   background: #000000;
 
   /* Pin html as the definitive scroll container with an explicit height.
-     100dvh = dynamic viewport height; reflows with iOS toolbar. */
+     100dvh = dynamic viewport height; reflows with iOS toolbar.
+     100vh first as a fallback for browsers without dynamic-viewport units. */
+  height: 100vh;
   height: 100dvh;
   overflow-y: auto;
   overflow-x: clip;            /* like hidden but doesn't compete with snap */
@@ -137,12 +141,28 @@ html.page-home body {
 }
 
 html.page-home main > section {
-  /* Match the container's viewport unit exactly so each section is one
-     "screen" tall — even as the iOS toolbar toggles. Previously we used
-     100svh, which left a sliver of empty space below the section when
-     the toolbar retracted. */
-  height: 100dvh;
-  min-height: 100dvh;
+  /* Each section must ALWAYS be at least as tall as the visible viewport so
+     the next section can never peek in at the bottom as the iOS toolbar
+     toggles.
+
+     - 100dvh tracks the *current* viewport, but on iOS it lags during the
+       toolbar collapse/expand animation: mid-swipe the viewport grows while
+       the section is still sized to the smaller value, briefly revealing the
+       top of the next section. That intermittent reveal is exactly the
+       "I can see part of the next video" bug — and why it looked inconsistent
+       from section to section (it depended on whether the toolbar happened to
+       change state during that swipe).
+     - 100lvh is the LARGE viewport (toolbars retracted = the biggest the
+       viewport ever gets). Sizing to it guarantees section height >= the
+       visible viewport in every toolbar state, so the next section is always
+       pushed fully below the fold. When the toolbar is showing, the extra
+       height simply overflows below the fold (overflow: hidden) — never a peek.
+     - 100vh first as a fallback for browsers without large-viewport units
+       (on those, 100vh already equals the large viewport). */
+  height: 100vh;
+  height: 100lvh;
+  min-height: 100vh;
+  min-height: 100lvh;
   overflow: hidden;
   position: relative;
   scroll-snap-align: start;

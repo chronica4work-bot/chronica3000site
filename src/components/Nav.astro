@@ -119,8 +119,8 @@ const isHome = path === '/';
 
     function glideTo(el) {
       if (animating) return;
-      var targetY = el.getBoundingClientRect().top + window.scrollY;
       var startY = window.scrollY;
+      var targetY = el.getBoundingClientRect().top + startY;
       var distance = targetY - startY;
       if (Math.abs(distance) < 1) return;
 
@@ -138,11 +138,44 @@ const isHome = path === '/';
         if (t < 1) {
           requestAnimationFrame(step);
         } else {
-          html.style.scrollSnapType = prevSnap;  // snap re-enables, final position IS a snap point
-          html.style.scrollBehavior = prevBehavior;
-          animating = false;
+          settle();
         }
       }
+
+      /*
+       * THE SNAP-BACK FIX.
+       *
+       * Bug: clicking "contact us" from a lower section glided to #contact,
+       * then the page jumped straight back to the section we came from.
+       *
+       * Cause: every section is `scroll-snap-stop: always` under
+       * `scroll-snap-type: y mandatory`. When we glide with snap turned OFF we
+       * skip past several "always-stop" sections; the moment snap is turned
+       * back ON, WebKit re-runs its snap pass and refuses to honour a position
+       * that jumped over those mandatory stops — it re-commits to the last
+       * section it considers legitimately stopped at (the origin). That's the
+       * visible snap-back.
+       *
+       * Fix: land exactly on #contact, re-enable snap, then re-assert the exact
+       * target across the next two animation frames *while snap is active*. The
+       * re-assert overwrites WebKit's re-snap and commits #contact as the
+       * resting (active) snap section. Done with scrollBehavior:auto so the
+       * re-assert is instant, not a second animation.
+       */
+      function settle() {
+        var finalY = Math.round(targetY);
+        window.scrollTo(0, finalY);
+        html.style.scrollSnapType = prevSnap;    // snap re-enabled
+        requestAnimationFrame(function () {
+          window.scrollTo(0, finalY);
+          requestAnimationFrame(function () {
+            window.scrollTo(0, finalY);
+            html.style.scrollBehavior = prevBehavior;
+            animating = false;
+          });
+        });
+      }
+
       requestAnimationFrame(step);
     }
 

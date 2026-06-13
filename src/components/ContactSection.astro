@@ -1,8 +1,8 @@
 ---
 /**
- * Contact section — full 100svh snap section on the homepage.
+ * Contact section — full 100lvh snap section on the homepage.
  *
- * The .page-home rule in global.css gives this <section> height: 100svh +
+ * The .page-home rule in global.css gives this <section> height: 100lvh +
  * scroll-snap-align: start, so we only need to handle internal layout here.
  *
  * On inner pages this same component renders without snap (its parent <main>
@@ -41,10 +41,13 @@ const year = new Date().getFullYear();
     justify-content: center;
     padding-inline: var(--gutter);
   }
-  /* When snapping (homepage), the global rule already sets 100svh, but make
-     sure the inner column truly centers in that height. */
+  /* When snapping (homepage), the global rule sizes this section to 100lvh
+     (see global.css). Match that here so the inner column centers in the same
+     height every other section uses — keeps Contact a consistent fullscreen
+     slide and avoids the next/previous section peeking in. */
   html.page-home .contact {
-    min-height: 100svh;
+    min-height: 100vh;
+    min-height: 100lvh;
   }
 
   .contact__inner {
