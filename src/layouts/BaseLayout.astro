@@ -61,6 +61,15 @@ const showLoader = pageClass === 'page-home';
       if (window.location.hash) {
         document.documentElement.style.scrollBehavior = 'auto';
         window.addEventListener('load', function () {
+          // Explicitly land on the target section. On the homepage the scroll
+          // container is <main> (not the document), and native fragment
+          // scrolling into a nested scroller isn't guaranteed across browsers,
+          // so we scroll the element into view ourselves. Inner pages where the
+          // document scrolls are handled identically and correctly.
+          try {
+            var el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+            if (el) el.scrollIntoView({ block: 'start' });
+          } catch (e) {}
           requestAnimationFrame(function () {
             document.documentElement.style.scrollBehavior = '';
           });

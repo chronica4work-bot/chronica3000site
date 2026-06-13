@@ -94,89 +94,82 @@ const isHome = path === '/';
 
 <script is:inline>
   /*
-   * "contact us" cinematic glide.
+   * "contact us" navigation — glide to #contact and STAY there.
    *
    * Works on every page that renders a #contact element (homepage + all
-   * internal pages — ContactSection is rendered everywhere). Animates the
-   * scroll over ~600ms with a custom ease-in-out, temporarily disabling
-   * scroll-snap and CSS scroll-behavior so the homepage's mandatory snap
-   * doesn't drag the page through every intermediate section.
+   * internal pages — ContactSection is rendered everywhere). If the current
+   * page has no #contact, the click is left alone and navigates to /#contact
+   * as a normal anchor (BaseLayout's head script lands it with no flash).
    *
-   * If the current page doesn't have a #contact element, the click is left
-   * alone and the browser navigates to /#contact as a normal anchor link
-   * (the head script in BaseLayout handles the no-flash landing there).
+   * ── ROOT CAUSE of the old snap-back ──────────────────────────────────────
+   * Every homepage section is `scroll-snap-stop: always` under
+   * `scroll-snap-type: y mandatory`. The previous code glided by turning
+   * scroll-snap-type OFF, animating, then turning it back ON. On iOS Safari
+   * (WebKit), turning snap-type back ON re-runs the snap pass and REFUSES a
+   * scroll position that jumped over `scroll-snap-stop: always` sections — it
+   * re-commits to the last section it considers legitimately stopped at, i.e.
+   * the highlight you came from. That is the visible jump-back. (Blink/desktop
+   * Chrome does not enforce this, which is why it only reproduced on iPhone.)
    *
-   * prefers-reduced-motion: bypass the animation and jump instantly.
+   * ── FIX ──────────────────────────────────────────────────────────────────
+   * Never toggle scroll-snap-type. Instead:
+   *   1. Relax `scroll-snap-stop` from `always` → `normal` on the sections for
+   *      the duration of the glide, so the snap engine lets us travel straight
+   *      to #contact instead of being yanked to an intermediate stop.
+   *   2. Use native scrollIntoView (smooth) — with snap-type left ON, the
+   *      engine glides and COMMITS #contact as the resting/active snap section.
+   *   3. After the scroll settles, restore `scroll-snap-stop: always` and
+   *      re-assert #contact once (idempotent) so we are guaranteed committed.
+   * Because scroll-snap-type is never turned off→on, WebKit has nothing to
+   * re-snap, so there is no jump-back.
+   *
+   * prefers-reduced-motion: jump instantly (no smooth animation).
    */
   (function () {
-    var DURATION = 600;            // ms — target 450-700
-    var animating = false;
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var navigating = false;
 
-    function easeInOutCubic(t) {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    // Relax / restore scroll-snap-stop on the homepage sections.
+    function relaxStops(relax) {
+      var secs = document.querySelectorAll('main > section');
+      for (var i = 0; i < secs.length; i++) {
+        secs[i].style.scrollSnapStop = relax ? 'normal' : '';
+      }
     }
 
-    function glideTo(el) {
-      if (animating) return;
-      var startY = window.scrollY;
-      var targetY = el.getBoundingClientRect().top + startY;
-      var distance = targetY - startY;
-      if (Math.abs(distance) < 1) return;
+    function goToContact(target) {
+      if (navigating) return;
+      navigating = true;
 
-      animating = true;
-      var html = document.documentElement;
-      var prevSnap = html.style.scrollSnapType;
-      var prevBehavior = html.style.scrollBehavior;
-      html.style.scrollSnapType = 'none';        // free the scroll from snap during the glide
-      html.style.scrollBehavior = 'auto';        // we control the animation manually
+      // Clear any stored "return to this list/highlight" state so nothing can
+      // restore the previous section after we land on Contact.
+      try { sessionStorage.removeItem('chronica:lastList'); } catch (e) {}
 
-      var startTime = performance.now();
-      function step(now) {
-        var t = Math.min((now - startTime) / DURATION, 1);
-        window.scrollTo(0, startY + distance * easeInOutCubic(t));
-        if (t < 1) {
-          requestAnimationFrame(step);
-        } else {
-          settle();
-        }
-      }
+      relaxStops(true);
+      // Snap-type stays ON. The engine commits #contact; no re-snap-back.
+      target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+      // Make Contact the active section in the URL.
+      try { history.replaceState(null, '', '#contact'); } catch (e) {}
 
-      /*
-       * THE SNAP-BACK FIX.
-       *
-       * Bug: clicking "contact us" from a lower section glided to #contact,
-       * then the page jumped straight back to the section we came from.
-       *
-       * Cause: every section is `scroll-snap-stop: always` under
-       * `scroll-snap-type: y mandatory`. When we glide with snap turned OFF we
-       * skip past several "always-stop" sections; the moment snap is turned
-       * back ON, WebKit re-runs its snap pass and refuses to honour a position
-       * that jumped over those mandatory stops — it re-commits to the last
-       * section it considers legitimately stopped at (the origin). That's the
-       * visible snap-back.
-       *
-       * Fix: land exactly on #contact, re-enable snap, then re-assert the exact
-       * target across the next two animation frames *while snap is active*. The
-       * re-assert overwrites WebKit's re-snap and commits #contact as the
-       * resting (active) snap section. Done with scrollBehavior:auto so the
-       * re-assert is instant, not a second animation.
-       */
+      // Settle: restore snap-stop and guarantee we are committed to Contact.
+      var settled = false;
       function settle() {
-        var finalY = Math.round(targetY);
-        window.scrollTo(0, finalY);
-        html.style.scrollSnapType = prevSnap;    // snap re-enabled
-        requestAnimationFrame(function () {
-          window.scrollTo(0, finalY);
-          requestAnimationFrame(function () {
-            window.scrollTo(0, finalY);
-            html.style.scrollBehavior = prevBehavior;
-            animating = false;
-          });
-        });
+        if (settled) return;
+        settled = true;
+        relaxStops(false);
+        target.scrollIntoView({ block: 'start' }); // idempotent re-assert
+        navigating = false;
       }
-
-      requestAnimationFrame(step);
+      // scrollend is the precise signal where supported; always keep a
+      // timeout fallback (Safari only shipped scrollend recently).
+      var scroller = document.querySelector('html.page-home main') || window;
+      try {
+        scroller.addEventListener('scrollend', function onEnd() {
+          scroller.removeEventListener('scrollend', onEnd);
+          settle();
+        }, { once: true });
+      } catch (e) {}
+      setTimeout(settle, reduceMotion ? 50 : 1000);
     }
 
     document.querySelectorAll('a[href$="#contact"]').forEach(function (link) {
@@ -184,13 +177,7 @@ const isHome = path === '/';
         var target = document.getElementById('contact');
         if (!target) return;                     // no local #contact → let the link navigate
         e.preventDefault();
-
-        if (reduceMotion) {
-          target.scrollIntoView({ block: 'start' });
-        } else {
-          glideTo(target);
-        }
-        try { history.replaceState(null, '', '#contact'); } catch (e) {}
+        goToContact(target);
       });
     });
   })();

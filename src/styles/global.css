@@ -101,68 +101,60 @@ ol {
 }
 
 /* =====================================================
-   Homepage scroll system — Tilda-correlated.
-   `pageClass="page-home"` sets the class on <html>. We pin <html> as the
-   ONE AND ONLY scroll container so its scroll-snap actually fires.
-   Mandatory + always: every scroll gesture locks to the next section.
+   Homepage scroll system — fullscreen snap slides.
 
-   iOS Safari notes:
-   - The scroll container needs an EXPLICIT height for snap to anchor
-     reliably (otherwise iOS sometimes treats overflow scroll as the body).
-   - The CONTAINER tracks the *visible* viewport (100dvh) so it always frames
-     exactly one screen, while each SECTION is sized to the *large* viewport
-     (100lvh, see below). Section >= container in every toolbar state, which
-     is what guarantees only one section is ever visible — no peek of the next.
+   ARCHITECTURE (rewritten):
+   `pageClass="page-home"` sets the class on <html>.
+
+   The scroll container is <main>, NOT <html>. This is the key change.
+
+   Why <main> and not <html>:
+   1. iOS fullscreen reliability. When <html> is the scroll container, iOS
+      Safari's address bar collapses/expands as you scroll, so the *visible*
+      viewport height keeps changing mid-swipe. With dvh/lvh/svh sizing the
+      section can momentarily be shorter than the live viewport — that is the
+      "I can see a strip of the next section at the bottom" bug. By LOCKING
+      <html> and <body> to the viewport (height:100%; overflow:hidden) and
+      scrolling an inner <main> instead, the address bar never collapses, so
+      the visible viewport height is CONSTANT. Every section is height:100% of
+      that constant viewport — exactly one screen, every time, with no peek.
+   2. Snap reliability. scroll-snap on the root <html> element is buggy on iOS
+      Safari (sections rest between snap points). scroll-snap on a normal block
+      element (<main>) is reliable. This is why, before, only one section
+      (Pink & Blues) ever happened to look right — the others were resting
+      between snap points. They are CSS-identical; the difference was snap
+      landing, not section height.
+
    - We deliberately do NOT use `-webkit-overflow-scrolling: touch`
      (deprecated; on modern iOS it can BREAK snap behaviour).
    ===================================================== */
-html.page-home {
-  scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
-  background: #000000;
 
-  /* Pin html as the definitive scroll container with an explicit height.
-     100dvh = dynamic viewport height; reflows with iOS toolbar.
-     100vh first as a fallback for browsers without dynamic-viewport units. */
-  height: 100vh;
-  height: 100dvh;
-  overflow-y: auto;
-  overflow-x: clip;            /* like hidden but doesn't compete with snap */
-  overscroll-behavior-y: none; /* no rubber-band overshoot that breaks snap perception */
+/* Lock the root + body to the viewport — they do not scroll. This is what
+   stops the iOS address bar from collapsing, keeping the viewport constant. */
+html.page-home,
+html.page-home body {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
-/* On the homepage, body must NOT scroll independently — otherwise it
-   becomes a second scroll container and html's snap silently stops working.
-   These overrides cancel the global body rules from earlier in this file. */
-html.page-home body {
-  overflow: visible;
-  min-height: 0;
-  height: auto;  /* let body grow to total content (6+ sections) */
+/* <main> is the ONE scroll container. */
+html.page-home main {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: none; /* no rubber-band overshoot that breaks snap perception */
+  background: #000000;
 }
 
 html.page-home main > section {
-  /* Each section must ALWAYS be at least as tall as the visible viewport so
-     the next section can never peek in at the bottom as the iOS toolbar
-     toggles.
-
-     - 100dvh tracks the *current* viewport, but on iOS it lags during the
-       toolbar collapse/expand animation: mid-swipe the viewport grows while
-       the section is still sized to the smaller value, briefly revealing the
-       top of the next section. That intermittent reveal is exactly the
-       "I can see part of the next video" bug — and why it looked inconsistent
-       from section to section (it depended on whether the toolbar happened to
-       change state during that swipe).
-     - 100lvh is the LARGE viewport (toolbars retracted = the biggest the
-       viewport ever gets). Sizing to it guarantees section height >= the
-       visible viewport in every toolbar state, so the next section is always
-       pushed fully below the fold. When the toolbar is showing, the extra
-       height simply overflows below the fold (overflow: hidden) — never a peek.
-     - 100vh first as a fallback for browsers without large-viewport units
-       (on those, 100vh already equals the large viewport). */
-  height: 100vh;
-  height: 100lvh;
-  min-height: 100vh;
-  min-height: 100lvh;
+  /* 100% of <main>, which is 100% of the locked viewport. Pure % means there
+     is no dvh/svh/lvh ambiguity — each section is exactly one screen tall and
+     identical to every other section. */
+  height: 100%;
+  min-height: 100%;
   overflow: hidden;
   position: relative;
   scroll-snap-align: start;
@@ -172,14 +164,8 @@ html.page-home main > section {
 /* Honour reduced motion — disable snap + smooth scroll for users who'd find
    it disorienting. */
 @media (prefers-reduced-motion: reduce) {
-  html.page-home {
+  html.page-home main {
     scroll-snap-type: none;
     scroll-behavior: auto;
   }
 }
-
-/* NOTE — we used to drop snap to `proximity` on coarse pointers, hoping it
-   would feel less aggressive. In practice it made iOS feel "unlocked" mid-
-   scroll: the brief explicitly asks for section-by-section locking on
-   mobile. Mandatory everywhere is the right call; iOS handles it fine as
-   long as the container has an explicit height (above). */
