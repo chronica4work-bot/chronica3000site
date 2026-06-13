@@ -37,10 +37,6 @@ const orgSchema = {
   url: 'https://chronica3000.com',
   logo: 'https://chronica3000.com/img/chronica-icon-512.png',
 };
-
-// The loading screen only mounts on the homepage. Inner pages don't have a
-// hero video to wait on, so a loader there would just feel like an obstacle.
-const showLoader = pageClass === 'page-home';
 ---
 
 <!doctype html>
@@ -75,8 +71,9 @@ const showLoader = pageClass === 'page-home';
     <meta name="twitter:image" content={ogImageUrl} />
     <meta name="twitter:image:alt" content="chronica" />
 
-    {/* Favicons + app icons. Small sizes use the "c" monogram (legible at
-        16–48px); apple-touch-icon is the same monogram on black. */}
+    {/* Favicons + app icons — ALL the same chronica wordmark on black, so the
+        browser tab, bookmarks, Google result icon, apple-touch, manifest and
+        Organization logo are one single brand mark. */}
     <link rel="icon" type="image/png" sizes="48x48" href="/img/favicon-48x48.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
@@ -115,95 +112,8 @@ const showLoader = pageClass === 'page-home';
         });
       }
     </script>
-
-    {/* Loading screen — homepage only.
-        Inlined here so it paints on the FIRST frame, before global.css
-        downloads and parses. Black canvas with the chronica wordmark and a
-        subtle pulsing rule. Fades when the hero video reports `canplay`
-        (dispatched as `chronica:hero-ready`), or after a 3.5s safety timeout
-        — whichever comes first. Returning from BFCache: removed instantly.
-        Reduced motion: skipped entirely. */}
-    {showLoader && (
-      <style is:inline>
-        {`
-          #chronica-loader {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            background: #000;
-            display: grid;
-            place-items: center;
-            transition: opacity 600ms ease;
-            will-change: opacity;
-          }
-          #chronica-loader[data-hidden] {
-            opacity: 0;
-            pointer-events: none;
-          }
-          #chronica-loader img {
-            width: clamp(120px, 18vw, 200px);
-            height: auto;
-            opacity: 0.95;
-          }
-          #chronica-loader::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            bottom: 22%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.35);
-            animation: chronicaLoadPulse 1.6s ease-in-out infinite;
-          }
-          @keyframes chronicaLoadPulse {
-            0%, 100% { opacity: 0.2; transform: translateX(-50%) scaleX(0.6); }
-            50%      { opacity: 0.9; transform: translateX(-50%) scaleX(1);   }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            #chronica-loader { display: none; }
-          }
-        `}
-      </style>
-    )}
   </head>
   <body>
-    {showLoader && (
-      <div id="chronica-loader" aria-hidden="true">
-        <img src="/img/chronica-mark.png" alt="" width="160" height="38" fetchpriority="high" />
-      </div>
-      <script is:inline>
-        (function () {
-          var loader = document.getElementById('chronica-loader');
-          if (!loader) return;
-          var hidden = false;
-          function hide() {
-            if (hidden) return;
-            hidden = true;
-            loader.setAttribute('data-hidden', '');
-            // Remove from DOM after the fade so it can never absorb taps or
-            // hold a paint layer. Dispatch a follow-up event in case any
-            // component wants to start its own animation post-loader.
-            setTimeout(function () {
-              if (loader.parentNode) loader.parentNode.removeChild(loader);
-              try { document.dispatchEvent(new CustomEvent('chronica:loader-gone')); } catch (e) {}
-            }, 700);
-          }
-          // Primary signal: the hero reports ready.
-          document.addEventListener('chronica:hero-ready', hide, { once: true });
-          // Safety net: never trap the user if the hero stalls (slow 3G, etc).
-          setTimeout(hide, 3500);
-          // Reduced motion: dismiss immediately.
-          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) hide();
-          // BFCache: if the user navigates back to a cached page, the
-          // browser may restore the DOM with the loader still mounted —
-          // dismiss it instantly in that case.
-          window.addEventListener('pageshow', function (e) {
-            if (e.persisted) hide();
-          });
-        })();
-      </script>
-    )}
     <slot />
   </body>
 </html>

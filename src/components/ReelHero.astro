@@ -51,13 +51,13 @@ const { src = '/video/reel.mp4', poster } = Astro.props;
   /*
    * Hero-ready signal.
    *
-   * The loading screen in BaseLayout listens for `chronica:hero-ready` and
-   * fades when it fires. We send it as soon as the hero video reports it
-   * can start playing — that's the moment a real user would expect the
-   * site to "begin". If `canplay` never arrives (slow network, unsupported
-   * codec, autoplay policy block), the loader's own 3.5s safety timeout
-   * still dismisses it, but we also send the event from a 3s fallback here
-   * so downstream listeners (e.g. HighlightedWorks) don't wait either.
+   * HighlightedWorks listens for `chronica:hero-ready` to gate its lazy video
+   * loading until the hero can play. We send it as soon as the hero video
+   * reports it can start playing. If `canplay` never arrives (slow network,
+   * unsupported codec, autoplay policy block), we still send the event from a
+   * 3s fallback here so downstream listeners don't wait forever.
+   * (The old homepage loading screen also used this signal; it has since been
+   * removed, but the event is kept for the highlight gating.)
    *
    * Also sets `window.__chronicaHeroReady = true` so late-attaching
    * listeners can detect the missed event synchronously.
