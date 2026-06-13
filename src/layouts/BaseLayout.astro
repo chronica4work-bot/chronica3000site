@@ -29,6 +29,15 @@ const site = Astro.site ?? 'https://chronica3000.com';
 const canonical = new URL(Astro.url.pathname, site).toString();
 const ogImageUrl = new URL(ogImage, site).toString();
 
+// Organization structured data — gives Google an explicit brand logo signal.
+const orgSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Chronica3000',
+  url: 'https://chronica3000.com',
+  logo: 'https://chronica3000.com/img/chronica-icon-512.png',
+};
+
 // The loading screen only mounts on the homepage. Inner pages don't have a
 // hero video to wait on, so a loader there would just feel like an obstacle.
 const showLoader = pageClass === 'page-home';
@@ -40,7 +49,7 @@ const showLoader = pageClass === 'page-home';
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="format-detection" content="telephone=no" />
-    {matchChrome && <meta name="theme-color" content="#0a0a0a" />}
+    <meta name="theme-color" content="#000000" />
 
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -72,6 +81,12 @@ const showLoader = pageClass === 'page-home';
     <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
+
+    {/* PWA / install manifest */}
+    <link rel="manifest" href="/site.webmanifest" />
+
+    {/* Organization structured data (brand logo signal for Google) */}
+    <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
