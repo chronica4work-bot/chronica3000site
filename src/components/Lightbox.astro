@@ -1,0 +1,215 @@
+---
+/**
+ * Fullscreen image lightbox for project stills + BTS.
+ *
+ * One reusable overlay. A small vanilla script intercepts clicks on any
+ * `<a data-gallery="...">` on the page, groups the anchors by their
+ * data-gallery value (e.g. "stills" / "bts"), and opens the overlay scoped to
+ * that group only — stills and BTS never mix.
+ *
+ * Progressive enhancement: the anchors keep their real `href` to the full
+ * image, so if this script fails to run the links still open the image
+ * normally (same tab). No external library.
+ */
+---
+
+<div id="lightbox" class="lb" role="dialog" aria-modal="true" aria-label="Image gallery" hidden>
+  <img class="lb__img" alt="" />
+  <div class="lb__zone lb__zone--prev" data-act="prev" aria-hidden="true"><span class="lb__arrow">&#8249;</span></div>
+  <div class="lb__zone lb__zone--next" data-act="next" aria-hidden="true"><span class="lb__arrow">&#8250;</span></div>
+  <button type="button" class="lb__close" data-act="close" aria-label="Close gallery">&times;</button>
+</div>
+
+<style>
+  .lb {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overscroll-behavior: contain;
+    touch-action: none;
+  }
+  /* `hidden` must beat `display:flex` above. */
+  .lb[hidden] { display: none; }
+
+  .lb__img {
+    max-width: 100vw;
+    max-height: 100vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;       /* clicks fall through to the nav zones */
+    z-index: 1;
+  }
+
+  /* Full-height click halves: left = previous, right = next. No panel, no border. */
+  .lb__zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .lb__zone--prev { left: 0;  justify-content: flex-start; }
+  .lb__zone--next { right: 0; justify-content: flex-end; }
+
+  /* Arrows are just chevron glyphs — no button look. Invisible until hover. */
+  .lb__arrow {
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1;
+    color: rgba(255, 255, 255, 0);
+    padding: 0 clamp(14px, 4vw, 44px);
+    transition: color 200ms ease;
+    user-select: none;
+  }
+  .lb__zone:hover .lb__arrow { color: rgba(255, 255, 255, 0.55); }
+
+  /* Subtle close — barely visible but usable. Top-left. */
+  .lb__close {
+    position: absolute;
+    top: clamp(8px, 2vh, 20px);
+    left: clamp(10px, 2vw, 24px);
+    z-index: 3;
+    background: none;
+    border: 0;
+    padding: 8px;
+    font-size: 30px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.32);
+    cursor: pointer;
+    transition: color 200ms ease;
+  }
+  .lb__close:hover,
+  .lb__close:focus-visible { color: rgba(255, 255, 255, 0.92); outline: none; }
+
+  /* Touch devices have no hover — keep arrows faintly visible for affordance. */
+  @media (hover: none) {
+    .lb__arrow { color: rgba(255, 255, 255, 0.26); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lb__arrow, .lb__close { transition: none; }
+  }
+
+  /* Body scroll lock while open (global so it can reach <html>/<body>). */
+  :global(html.lb-open),
+  :global(html.lb-open body) { overflow: hidden !important; }
+</style>
+
+<script>
+  (() => {
+    const lb = document.getElementById('lightbox');
+    if (!lb) return;
+    const imgEl = lb.querySelector('.lb__img');
+    const closeBtn = lb.querySelector('.lb__close');
+
+    // Build galleries from <a data-gallery="..."> in DOM order.
+    const links = Array.from(document.querySelectorAll('a[data-gallery]'));
+    if (!links.length) return;
+
+    const groups = {};
+    links.forEach((a) => {
+      const g = a.getAttribute('data-gallery');
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(a);
+    });
+
+    let current = [];      // [{ href, alt }]
+    let idx = 0;
+    let lastFocus = null;
+
+    function preload(i) {
+      if (i < 0 || i >= current.length) return;
+      const im = new Image();
+      im.src = current[i].href;
+    }
+
+    function show(i) {
+      idx = (i + current.length) % current.length;   // wrap around
+      const item = current[idx];
+      imgEl.src = item.href;
+      imgEl.alt = item.alt || '';
+      preload(idx + 1);   // lazy-load only the neighbours
+      preload(idx - 1);
+    }
+
+    function open(groupName, startIdx) {
+      const anchors = groups[groupName];
+      if (!anchors) return;
+      current = anchors.map((a) => ({
+        href: a.getAttribute('href'),
+        alt: (a.querySelector('img') && a.querySelector('img').alt) || '',
+      }));
+      lastFocus = document.activeElement;
+      lb.hidden = false;
+      document.documentElement.classList.add('lb-open');   // lock scroll
+      show(startIdx);
+      closeBtn.focus();
+    }
+
+    function close() {
+      lb.hidden = true;
+      imgEl.removeAttribute('src');
+      document.documentElement.classList.remove('lb-open');
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    const next = () => show(idx + 1);
+    const prev = () => show(idx - 1);
+
+    // Intercept gallery link clicks — but let modifier/middle clicks through
+    // (so "open in new tab" still works for anyone who wants the raw file).
+    links.forEach((a) => {
+      a.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+        e.preventDefault();
+        const g = a.getAttribute('data-gallery');
+        open(g, groups[g].indexOf(a));
+      });
+    });
+
+    // Click on overlay: act by data-act (close / prev / next).
+    lb.addEventListener('click', (e) => {
+      const hit = e.target.closest('[data-act]');
+      const act = hit && hit.getAttribute('data-act');
+      if (act === 'close') close();
+      else if (act === 'next') next();
+      else if (act === 'prev') prev();
+    });
+
+    // Keyboard: Esc close, arrows navigate, Tab trapped on the close button.
+    document.addEventListener('keydown', (e) => {
+      if (lb.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+      else if (e.key === 'Tab') { e.preventDefault(); closeBtn.focus(); }
+    });
+
+    // Swipe (mobile): horizontal swipe → next/prev.
+    let sx = null, sy = null;
+    lb.addEventListener('touchstart', (e) => {
+      const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY;
+    }, { passive: true });
+    lb.addEventListener('touchend', (e) => {
+      if (sx === null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) next(); else prev();
+      }
+      sx = sy = null;
+    }, { passive: true });
+  })();
+</script>

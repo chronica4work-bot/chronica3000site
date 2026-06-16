@@ -30,6 +30,7 @@ import Nav from '../components/Nav.astro';
 import ContactSection from '../components/ContactSection.astro';
 import ProjectVideo from '../components/ProjectVideo.astro';
 import LinkButtons from '../components/LinkButtons.astro';
+import Lightbox from '../components/Lightbox.astro';
 import { getCollection } from 'astro:content';
 import { getProjectMedia, youtubePoster } from '../lib/projectAssets';
 import { readProjectFile, readAllLinks } from '../lib/projectFiles';
@@ -157,7 +158,7 @@ const showMeta = hasMainCredits || coords;
         <ol class="project__gallery">
           {media.stills.map((src, i) => (
             <li>
-              <a href={src} target="_blank" rel="noopener noreferrer">
+              <a href={src} data-gallery="stills">
                 <img src={src} alt={`${d.title} — still ${i + 1}`} loading="lazy" />
               </a>
             </li>
@@ -172,7 +173,7 @@ const showMeta = hasMainCredits || coords;
         <ol class="project__gallery">
           {media.bts.map((src, i) => (
             <li>
-              <a href={src} target="_blank" rel="noopener noreferrer">
+              <a href={src} data-gallery="bts">
                 <img src={src} alt={`${d.title} — bts ${i + 1}`} loading="lazy" />
               </a>
             </li>
@@ -189,6 +190,8 @@ const showMeta = hasMainCredits || coords;
 
     <ContactSection />
   </main>
+
+  <Lightbox />
 </BaseLayout>
 
 <script is:inline>
