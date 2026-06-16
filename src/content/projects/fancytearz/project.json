@@ -1,0 +1,20 @@
+{
+  "slug": "fancytearz",
+  "title": "Kill Eva — fancy tearz",
+  "artist": "Kill Eva",
+  "track": "fancy tearz",
+  "year": "2025",
+  "location": "Barcelona",
+  "category": ["snippet"],
+  "roles": ["directed", "produced", "cinematography"],
+  "team": {
+    "director": ["@kirill_armanich"],
+    "dp": ["@freddy_film"],
+    "producer": ["@chronica3000"]
+  },
+  "video": {
+    "youtube": "https://www.youtube.com/watch?v=ofmNo2gWjvw",
+    "bunny": "",
+    "btsYoutube": ""
+  }
+}
