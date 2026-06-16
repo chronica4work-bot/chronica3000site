@@ -33,8 +33,10 @@ const year = new Date().getFullYear();
 
 <script>
   // Anti-spam contact. The address is never written as plain text in the HTML;
-  // it's assembled from separated parts here at click time. Primary action:
-  // copy to clipboard + show "copied". Fallback: open the default mail app.
+  // it's assembled from separated parts here at click time. On click: copy to
+  // clipboard (best effort, briefly shows "copied"), then ALWAYS open the
+  // default mail client via mailto. Clipboard failure doesn't block mailto;
+  // mailto failure doesn't undo the clipboard copy.
   (() => {
     const btn = document.getElementById('contact-cta');
     if (!btn) return;
@@ -45,14 +47,17 @@ const year = new Date().getFullYear();
 
     btn.addEventListener('click', async () => {
       const address = user + '@' + domain;
+      // 1. copy to clipboard (best effort)
       try {
         await navigator.clipboard.writeText(address);
         btn.textContent = 'copied';
         clearTimeout(timer);
         timer = setTimeout(() => { btn.textContent = label; }, 1600);
       } catch (e) {
-        window.location.href = 'mailto:' + address;
+        /* clipboard unavailable — fall through to mailto */
       }
+      // 2. open the default mail client (always)
+      window.location.href = 'mailto:' + address;
     });
   })();
 </script>
