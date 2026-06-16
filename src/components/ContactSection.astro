@@ -19,7 +19,7 @@ const year = new Date().getFullYear();
   <div class="contact__inner">
     <span class="contact__label">[contact us]</span>
 
-    <a href="mailto:chronica4work@gmail.com" class="contact__email">chronica4work@gmail.com</a>
+    <button type="button" id="contact-cta" class="contact__email" aria-live="polite">contact us</button>
 
     <ul class="contact__socials" aria-label="Social">
       <li><a href="https://instagram.com/chronica3000" target="_blank" rel="noopener noreferrer">instagram</a></li>
@@ -30,6 +30,32 @@ const year = new Date().getFullYear();
     <p class="contact__copy">© {year} chronica — barcelona</p>
   </div>
 </section>
+
+<script>
+  // Anti-spam contact. The address is never written as plain text in the HTML;
+  // it's assembled from separated parts here at click time. Primary action:
+  // copy to clipboard + show "copied". Fallback: open the default mail app.
+  (() => {
+    const btn = document.getElementById('contact-cta');
+    if (!btn) return;
+    const user = 'chronica4work';
+    const domain = 'gmail.com';
+    const label = btn.textContent;
+    let timer;
+
+    btn.addEventListener('click', async () => {
+      const address = user + '@' + domain;
+      try {
+        await navigator.clipboard.writeText(address);
+        btn.textContent = 'copied';
+        clearTimeout(timer);
+        timer = setTimeout(() => { btn.textContent = label; }, 1600);
+      } catch (e) {
+        window.location.href = 'mailto:' + address;
+      }
+    });
+  })();
+</script>
 
 <style>
   .contact {
@@ -74,10 +100,11 @@ const year = new Date().getFullYear();
     letter-spacing: 0;
     color: #ffffff;
     border-bottom: 1px solid rgba(255, 255, 255, 0.25);
-    padding-bottom: 4px;
+    padding: 0 0 4px;
+    background: none;
+    cursor: pointer;
+    text-transform: lowercase;
     transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
-    /* Break gracefully on narrow viewports rather than overflowing. */
-    word-break: break-all;
     max-width: 100%;
   }
   .contact__email:hover {

@@ -66,6 +66,14 @@ for (const [k, v] of Object.entries(allLinks)) {
 const poster = media.poster ?? youtubePoster(ytUrl) ?? undefined;
 const showVideoBlock = Boolean(media.mainVideo || d.video.bunny || ytUrl || poster);
 
+// Stills for the gallery (grid + lightbox) — NEVER include the poster. The
+// poster is the project cover only; it must not appear as a still or in the
+// stills lightbox navigation. Belt-and-suspenders: drop the exact poster asset
+// URL AND any built "poster.*" asset, regardless of how it entered the list.
+const stills = media.stills.filter(
+  (src) => src !== media.poster && !/\/poster\.[^/]*\.(?:jpe?g|png|webp)$/i.test(src)
+);
+
 // Subtitle — aggregate ALL director-related credits into one line.
 // e.g. two "director" rows render as "director Kira Uteshkaliev & Gosha Mirchuk".
 const directorCredits = hasMainCredits
@@ -152,11 +160,11 @@ const showMeta = hasMainCredits || coords;
       </section>
     )}
 
-    {media.stills.length > 0 && (
+    {stills.length > 0 && (
       <section class="project__stills">
         <h2 class="project__section-label">[stills]</h2>
         <ol class="project__gallery">
-          {media.stills.map((src, i) => (
+          {stills.map((src, i) => (
             <li>
               <a href={src} data-gallery="stills">
                 <img src={src} alt={`${d.title} — still ${i + 1}`} loading="lazy" />
@@ -297,11 +305,15 @@ const showMeta = hasMainCredits || coords;
 
   .project__credits { display: block; margin: 0; padding: 0; }
   .project__credit  { display: block; margin: 0; line-height: 22px; }
+  /* Roles (dt) are secondary — dimmed so the names scan easily. Names (dd)
+     stay full opacity. Same font/size/spacing; applies to both the main
+     credits and the +credits accordion. */
   .project__credit dt {
     display: inline;
     font-family: inherit;
     font-weight: 600;
     color: #ffffff;
+    opacity: 0.65;
   }
   .project__credit dd {
     display: inline;
@@ -309,6 +321,7 @@ const showMeta = hasMainCredits || coords;
     font-family: inherit;
     font-weight: 400;
     color: #ffffff;
+    opacity: 1;
   }
   .project__credit dd::before { content: ' '; }
   .project__credit--thanks { margin-top: 22px; }
