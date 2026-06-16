@@ -27,11 +27,16 @@ const { groups } = Astro.props;
 ---
 
 <section class="works-page">
-  {/* No page header — only category labels per brief */}
-  {groups.map((g) => (
+  {/* Desktop: each category is a vertical column, biggest (most projects) on
+      the left → smaller to the right (inverted-equalizer / staircase). The
+      column ORDER is whatever `groups` already is — groupByCategory() sorts by
+      count desc, then CATEGORY_ORDER, then alpha — so no extra logic here, and
+      reverting is just restoring this file. Tablet/mobile: columns stack. */}
+  <div class="works-columns">
+    {groups.map((g) => (
     <section class="cat" aria-label={g.name}>
-      <h2 class="cat__label container">[{g.name}]</h2>
-      <ol class="cat__grid container">
+      <h2 class="cat__label">[{g.name}]</h2>
+      <ol class="cat__grid">
         {g.projects.map((p: Project) => {
           const poster = bestPoster(p.data.slug, p.data.video.youtube);
           const hoverVideo = getProjectMedia(p.data.slug).hoverVideo;
@@ -70,7 +75,8 @@ const { groups } = Astro.props;
         })}
       </ol>
     </section>
-  ))}
+    ))}
+  </div>
 </section>
 
 <script is:inline>
@@ -119,8 +125,24 @@ const { groups } = Astro.props;
     color: #fff;
   }
 
-  /* ---- category section ---- */
-  .cat + .cat { margin-top: clamp(56px, 8vw, 100px); }
+  /* ============================================================
+     DESKTOP — categories as side-by-side columns.
+     Equal-width columns, top-aligned. The left column has the most
+     projects (tallest), columns shorten to the right → inverted equalizer.
+     The page scrolls vertically; columns simply differ in height.
+     ============================================================ */
+  .works-columns {
+    display: flex;
+    align-items: flex-start;          /* top-aligned → staircase heights */
+    gap: clamp(20px, 2.2vw, 44px);
+    padding-inline: var(--gutter);
+  }
+  .cat {
+    flex: 1 1 0;                       /* equal-width columns */
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
 
   .cat__label {
     font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -128,23 +150,40 @@ const { groups } = Astro.props;
     line-height: 31px;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 45px;
+    margin: 0 0 clamp(22px, 2vw, 40px);
   }
 
-  /* ---- responsive grid: 3 / 2 / 1 columns ---- */
+  /* Within a column: tiles stacked vertically (one wide). */
   .cat__grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(18px, 1.6vw, 30px);
     list-style: none;
-    padding-inline: var(--gutter);
+    margin: 0;
+    padding: 0;
   }
-  @media (max-width: 1279px) {
-    .cat__grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+
+  /* ============================================================
+     TABLET / MOBILE — columns can't stay readable when narrow, so they
+     stack back into full-width category sections (the familiar layout),
+     with a 2-col tile grid on tablet and 1-col on phones. Cleanest +
+     most usable on small screens, and a trivial mental revert.
+     ============================================================ */
+  @media (max-width: 1023px) {
+    .works-columns {
+      flex-direction: column;
+      gap: clamp(48px, 8vw, 90px);
+    }
+    .cat { flex: none; }
+    .cat__grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
   }
-  @media (max-width: 767px) {
+  @media (max-width: 600px) {
     .cat__grid { grid-template-columns: 1fr; gap: 16px; }
-    .cat__label { font-size: 18px; line-height: 28px; margin-bottom: 28px; }
+    .cat__label { font-size: 18px; line-height: 28px; margin-bottom: 24px; }
   }
 
   /* ---- tile ---- */

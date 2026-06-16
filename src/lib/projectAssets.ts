@@ -15,7 +15,7 @@
  */
 
 const posterModules = import.meta.glob(
-  '/src/content/projects/*/poster.{jpg,jpeg,png,webp}',
+  '/src/content/projects/*/poster.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP,AVIF}',
   { eager: true, query: '?url', import: 'default' }
 ) as Record<string, string>;
 
@@ -45,12 +45,12 @@ const hoverVideoModules = import.meta.glob(
 ) as Record<string, string>;
 
 const stillsModules = import.meta.glob(
-  '/src/content/projects/*/stills/*.{jpg,jpeg,png,webp}',
+  '/src/content/projects/*/stills/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP,AVIF}',
   { eager: true, query: '?url', import: 'default' }
 ) as Record<string, string>;
 
 const btsModules = import.meta.glob(
-  '/src/content/projects/*/bts/*.{jpg,jpeg,png,webp}',
+  '/src/content/projects/*/bts/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP,AVIF}',
   { eager: true, query: '?url', import: 'default' }
 ) as Record<string, string>;
 
