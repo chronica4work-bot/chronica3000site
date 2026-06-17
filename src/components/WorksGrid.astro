@@ -175,9 +175,13 @@ const { groups } = Astro.props;
   @media (max-width: 1023px) {
     .works-columns {
       flex-direction: column-reverse;   /* smallest category first on narrow screens */
+      align-items: stretch;             /* CRITICAL: when stacked, columns must span
+                                           the full width — otherwise they keep the
+                                           desktop flex-start (content-width) sizing
+                                           and tiles render small with empty space. */
       gap: clamp(48px, 8vw, 90px);
     }
-    .cat { flex: none; }
+    .cat { flex: none; width: 100%; }
     .cat__grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);   /* tablet: 2 tiles per row */
