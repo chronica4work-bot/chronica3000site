@@ -48,6 +48,7 @@ const d = project.data;
 const media = getProjectMedia(d.slug);
 const allLinks = readAllLinks(d.slug);
 
+const statement = readProjectFile(d.slug, 'statement.txt')?.trim();
 const mainRaw = readProjectFile(d.slug, 'main-credits.md');
 const fullRaw = readProjectFile(d.slug, 'credits.md');
 const mainCredits = mainRaw ? parseCredits(mainRaw) : null;
@@ -82,11 +83,12 @@ const directorCredits = hasMainCredits
   : [];
 const directorRole = directorCredits[0]?.role.toLowerCase() ?? '';
 const directorNames = directorCredits.flatMap((c) => c.names);
+const leadCredit = mainCredits?.credits.find(c => c.role === 'produced and directed by');
 const showSubtitle = directorCredits.length > 0;
 
 const coords = [d.year, d.location].filter(Boolean).join(', ');
 const productionDesignBy = mainCredits?.credits.find(c => c.role === 'production design by');
-const showMeta = hasMainCredits || coords;
+const showMeta = mainCredits?.credits.some(c => c !== leadCredit) || coords;
 ---
 
 <BaseLayout title={d.title} description={`${d.title} — ${d.year} · chronica 3000`}>
@@ -98,6 +100,7 @@ const showMeta = hasMainCredits || coords;
       {showSubtitle && (
         <p class="project__subtitle"><span class="project__subtitle-role">{directorRole}</span> <CreditNames names={directorNames} separator=" & " /></p>
       )}
+      {leadCredit && <p class="project__subtitle"><span class="project__subtitle-role">{leadCredit.role}</span> <CreditNames names={leadCredit.names} /></p>}
     </header>
 
     {showVideoBlock && (
@@ -112,13 +115,15 @@ const showMeta = hasMainCredits || coords;
       </div>
     )}
 
+    {statement && <div class="project__statement">{statement.split(/\r?\n\s*\n/).map(paragraph => <p>{paragraph}</p>)}</div>}
+
     {productionDesignBy && <p class="project__coords">Production Design by <CreditNames names={productionDesignBy.names} /></p>}
 
     {showMeta && (
       <section class={hasMainCredits ? 'project__meta' : 'project__meta project__meta--coords-only'}>
         {hasMainCredits && (
           <dl class="project__credits">
-            {mainCredits!.credits.filter(c => c !== productionDesignBy).map((c) => (
+            {mainCredits!.credits.filter(c => c !== productionDesignBy && c !== leadCredit).map((c) => (
               <div class="project__credit">
                 <dt>{c.role.toLowerCase()}</dt>
                 <dd><CreditNames names={c.names} /></dd>
@@ -219,6 +224,16 @@ const showMeta = hasMainCredits || coords;
 </script>
 
 <style>
+  .project__statement {
+    max-width: 55ch;
+    margin: clamp(2.5rem, 6vw, 5rem) auto;
+    padding-inline: 1rem;
+    text-align: center;
+    text-wrap: pretty;
+    line-height: 1.65;
+  }
+  .project__statement p + p { margin-top: 1.2em; }
+
   /* === Project Template — Tom Sorry reference =============================
      Roboto Mono only. 20/31/600 title. 16/25 body. 22 credit row. 25 rhythm.
      Content column 1400px max. Video block 1260px (10% smaller). */
