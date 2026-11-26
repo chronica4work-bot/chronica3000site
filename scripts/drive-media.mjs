@@ -3,7 +3,11 @@ import { createHash, sign } from 'node:crypto';
 // Only these folders are scanned. Shortcuts and native Google documents are ignored.
 const root = '18BdO6XVkho7g36A6W8ARL9NEXxsY-doR';
 const folder = 'application/vnd.google-apps.folder';
-export const projects = new Set('fc27pepevarane ocbxfms2024 morkillbillcoffin 52haunted fancytearz fullmoon mastersofrosinnewyork mastersofrosinzisdead ocbxfms ocbxmonegros only1heart pinkblues psychodreams2 tomsorry'.split(' '));
+export const projects = new Set('realmadridfc27 fc27pepevarane ocbxfms2024 morkillbillcoffin 52haunted fancytearz fullmoon mastersofrosinnewyork mastersofrosinzisdead ocbxfms ocbxmonegros only1heart pinkblues psychodreams2 tomsorry'.split(' '));
+const folderSlugs = new Map([
+  ['1nySbiXNE7f7So-I2CmNSzxii4tDnQ1h2', 'fc27pepevarane'],
+  ['1HnJKpPHMfWde7uKsbNUARGiZGJpx6dqQ', 'realmadridfc27'],
+]);
 const api = 'https://www.googleapis.com/drive/v3/files';
 
 async function checked(url, options) {
@@ -75,7 +79,7 @@ export async function inventory(client) {
   }
   // Verify that the account can actually see the configured root.
   for (const item of await client.list(root)) {
-    const slug = item.id === '1nySbiXNE7f7So-I2CmNSzxii4tDnQ1h2' ? 'fc27pepevarane' : item.name;
+    const slug = folderSlugs.get(item.id) ?? item.name;
     if (item.mimeType !== folder || !projects.has(slug)) continue;
     unique(slug);
     await scan(item.id, slug, false);
