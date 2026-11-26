@@ -1,0 +1,4 @@
+{
+  "buildCommand": "node scripts/build-drive-media.mjs && npm run build",
+  "crons": [{ "path": "/api/check-media", "schedule": "15 4 * * *" }]
+}
