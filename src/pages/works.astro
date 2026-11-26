@@ -4,16 +4,43 @@ import Nav from '../components/Nav.astro';
 import WorksGrid from '../components/WorksGrid.astro';
 import ContactSection from '../components/ContactSection.astro';
 
+import { execFileSync } from 'node:child_process';
 import { loadForWorks, groupByCategory } from '../lib/projects';
 
 const projects = await loadForWorks();
+// First project uploads from the repository history. These also seed shallow checkouts.
+const added = new Map<string, number>([
+  ['naturalbornlovers', 1795717772], ['thechemodansaymyname', 1795716554],
+  ['portugalfc27', 1795715691], ['realmadridfc27', 1795713544],
+  ['fc27pepevarane', 1795711330], ['ocbxfms2024', 1795709446],
+  ['morkillbillcoffin', 1795709038], ['fancytearz', 1781624102],
+]);
+const initialUpload = 1781034540;
+// Ignore the synthetic root of a shallow clone. Editing credits or replacing a video
+// does not change the date a project was first added.
+try {
+  const history = execFileSync('git', ['log', '--no-renames', '--no-merges', '--diff-filter=A', '--format=@%at %P', '--name-only', '--', 'src/content/projects/*/project.json'], { encoding: 'utf8' });
+  let timestamp = 0;
+  for (const line of history.split('\n')) {
+    if (line.startsWith('@')) {
+      const [time, parent] = line.slice(1).split(' ');
+      timestamp = parent ? Number(time) : 0;
+      continue;
+    }
+    const slug = line.match(/^src\/content\/projects\/([^/]+)\/project\.json$/)?.[1];
+    if (slug && timestamp) added.set(slug, timestamp);
+  }
+} catch {
+  console.warn('Git upload history unavailable; using recorded Works chronology.');
+}
+projects.sort((a, b) => (added.get(b.data.slug) ?? initialUpload) - (added.get(a.data.slug) ?? initialUpload));
 const groups = groupByCategory(projects);
 ---
 
 <BaseLayout title="works">
   <Nav variant="solid" showBack backFallback="/" />
   <main>
-    <WorksGrid groups={groups} />
+    <WorksGrid groups={groups} projects={projects} />
     <ContactSection />
   </main>
 </BaseLayout>
