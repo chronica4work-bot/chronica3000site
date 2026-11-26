@@ -3,7 +3,7 @@ import { createHash, sign } from 'node:crypto';
 // Only these folders are scanned. Shortcuts and native Google documents are ignored.
 const root = '18BdO6XVkho7g36A6W8ARL9NEXxsY-doR';
 const folder = 'application/vnd.google-apps.folder';
-export const projects = new Set('morkillbillcoffin 52haunted fancytearz fullmoon mastersofrosinnewyork mastersofrosinzisdead ocbxfms ocbxmonegros only1heart pinkblues psychodreams2 tomsorry'.split(' '));
+export const projects = new Set('ocbxfms2024 morkillbillcoffin 52haunted fancytearz fullmoon mastersofrosinnewyork mastersofrosinzisdead ocbxfms ocbxmonegros only1heart pinkblues psychodreams2 tomsorry'.split(' '));
 const api = 'https://www.googleapis.com/drive/v3/files';
 
 async function checked(url, options) {
