@@ -5,7 +5,7 @@ interface Props {
 }
 const { names, separator = ', ' } = Astro.props;
 const entries = names.map(name => ({
-  name,
+  name: name === '@kirill_armanich' ? 'Кирилл Тешкареев' : name,
   href: /^@[A-Za-z0-9._]{1,30}$/.test(name) ? 'https://www.instagram.com/' + name.slice(1) + '/' : null,
 }));
 ---
