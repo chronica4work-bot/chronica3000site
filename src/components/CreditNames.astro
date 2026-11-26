@@ -4,15 +4,32 @@ interface Props {
   separator?: string;
 }
 const { names, separator = ', ' } = Astro.props;
-const entries = names.map(name => ({
-  name: name === '@kirill_armanich' ? 'Kira Uteshkaliev' : name,
-  href: /^@[A-Za-z0-9._]{1,30}$/.test(name) ? 'https://www.instagram.com/' + name.slice(1) + '/' : null,
-}));
+const profiles = [
+  { name: 'Kira Uteshkaliev', handle: 'kirill_armanich', aliases: ['Kirill Uteshkaliev'] },
+  { name: 'Luchi Nóbile', handle: 'luchinobile', aliases: ['Luchi Nobile'] },
+  { name: 'Freddy Film', handle: 'freddy_film' },
+  { name: 'Fedor Alyamov', handle: 'alyamov' },
+  { name: 'Chronica', handle: 'chronica3000', aliases: ['Chronica 3000', 'chronica3000'] },
+  { name: 'Andrey Diakov', handle: 'andreidiakov_' },
+  { name: 'Doce Studios', handle: 'doce.studios' },
+  { name: 'Pepe', handle: 'official_pepe' },
+  { name: 'Raphaël Varane', handle: 'raphaelvarane' },
+  { name: 'FC Porto', handle: 'fcporto' },
+  { name: 'Real Madrid', handle: 'realmadrid' },
+  { name: 'Portugal', handle: 'portugal' },
+  { name: 'EA SPORTS FC', handle: 'easportsfc' },
+];
+function resolveCredit(text: string) {
+  const key = text.toLowerCase();
+  const profile = profiles.find(p => [p.name, '@' + p.handle, ...(p.aliases ?? [])].some(alias => alias.toLowerCase() === key));
+  const handle = profile?.handle ?? (/^@[A-Za-z0-9._]{1,30}$/.test(text) ? text.slice(1) : null);
+  const label = text.startsWith('@') && profile ? profile.name : text;
+  return { label, href: handle ? 'https://www.instagram.com/' + handle + '/' : null };
+}
+const entries = names.map(name => name.split(/(\s+(?:and|&|for|by)\s+)/i).map(resolveCredit));
 ---
-{entries.map(({ name, href }, index) => (
-  <Fragment>
-    {index > 0 && separator}{href ? <a href={href} target="_blank" rel="noopener noreferrer">{name}</a> : name}
-  </Fragment>
+{entries.map((parts, index) => (
+  <Fragment>{index > 0 && separator}{parts.map(({ label, href }) => href ? <a href={href} target="_blank" rel="noopener noreferrer">{label}</a> : label)}</Fragment>
 ))}
 <style>
   a { text-decoration: underline; text-underline-offset: 0.15em; }
