@@ -32,6 +32,7 @@ import ProjectVideo from '../components/ProjectVideo.astro';
 import LinkButtons from '../components/LinkButtons.astro';
 import Lightbox from '../components/Lightbox.astro';
 import { getCollection } from 'astro:content';
+import CreditNames from '../components/CreditNames.astro';
 import { getProjectMedia, youtubePoster } from '../lib/projectAssets';
 import { readProjectFile, readAllLinks } from '../lib/projectFiles';
 import { parseCredits, creditsHaveContent } from '../lib/credits';
@@ -94,7 +95,7 @@ const showMeta = hasMainCredits || coords;
     <header class="project__header">
       <h1 class="project__title">{d.title}</h1>
       {showSubtitle && (
-        <p class="project__subtitle"><span class="project__subtitle-role">{directorRole}</span> {directorNames.join(' & ')}</p>
+        <p class="project__subtitle"><span class="project__subtitle-role">{directorRole}</span> <CreditNames names={directorNames} separator=" & " /></p>
       )}
     </header>
 
@@ -117,7 +118,7 @@ const showMeta = hasMainCredits || coords;
             {mainCredits!.credits.map((c) => (
               <div class="project__credit">
                 <dt>{c.role.toLowerCase()}</dt>
-                <dd>{c.names.join(', ')}</dd>
+                <dd><CreditNames names={c.names} /></dd>
               </div>
             ))}
           </dl>
@@ -134,13 +135,13 @@ const showMeta = hasMainCredits || coords;
             {fullCredits!.credits.map((c) => (
               <div class="project__credit">
                 <dt>{c.role.toLowerCase()}</dt>
-                <dd>{c.names.join(', ')}</dd>
+                <dd><CreditNames names={c.names} /></dd>
               </div>
             ))}
             {fullCredits!.specialThanks.length > 0 && (
               <div class="project__credit project__credit--thanks">
                 <dt>special thanks</dt>
-                <dd>{fullCredits!.specialThanks.join(', ')}</dd>
+                <dd><CreditNames names={fullCredits!.specialThanks} /></dd>
               </div>
             )}
           </dl>
