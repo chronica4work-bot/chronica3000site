@@ -5,7 +5,7 @@ import WorksGrid from '../components/WorksGrid.astro';
 import ContactSection from '../components/ContactSection.astro';
 
 import { execFileSync } from 'node:child_process';
-import { loadForWorks, groupByCategory } from '../lib/projects';
+import { loadForWorks } from '../lib/projects';
 
 const projects = await loadForWorks();
 // First project uploads from the repository history. These also seed shallow checkouts.
@@ -34,13 +34,12 @@ try {
   console.warn('Git upload history unavailable; using recorded Works chronology.');
 }
 projects.sort((a, b) => (added.get(b.data.slug) ?? initialUpload) - (added.get(a.data.slug) ?? initialUpload));
-const groups = groupByCategory(projects);
 ---
 
 <BaseLayout title="works">
   <Nav variant="solid" showBack backFallback="/" />
   <main>
-    <WorksGrid groups={groups} projects={projects} />
+    <WorksGrid projects={projects} />
     <ContactSection />
   </main>
 </BaseLayout>
