@@ -1,4 +1,4 @@
-import { createHash, sign } from 'node:crypto';
+export const projects = new Set('thechemodansaymyname portugalfc27 realmadridfc27 fc27pepevarane ocbxfms2024 morkillbillcoffin 52haunted fancytearz fullmoon mastersofrosinnewyork mastersofrosinzisdead ocbxfms ocbxmonegros only1heart pinkblues psychodreams2 tomsorry'.split(' '));
 
 // Only these folders are scanned. Shortcuts and native Google documents are ignored.
 const root = '18BdO6XVkho7g36A6W8ARL9NEXxsY-doR';
