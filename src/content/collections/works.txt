@@ -3,6 +3,7 @@
 # One slug per line. Line order = grid order within their category.
 # Lines starting with # are comments. Blank lines are ignored.
 
+morkillbillcoffin
 mastersofrosinzisdead
 ocbxmonegros
 52haunted
