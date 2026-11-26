@@ -85,6 +85,7 @@ const directorNames = directorCredits.flatMap((c) => c.names);
 const showSubtitle = directorCredits.length > 0;
 
 const coords = [d.year, d.location].filter(Boolean).join(', ');
+const productionDesignBy = mainCredits?.credits.find(c => c.role === 'production design by');
 const showMeta = hasMainCredits || coords;
 ---
 
@@ -111,11 +112,13 @@ const showMeta = hasMainCredits || coords;
       </div>
     )}
 
+    {productionDesignBy && <p class="project__coords">Production Design by <CreditNames names={productionDesignBy.names} /></p>}
+
     {showMeta && (
       <section class={hasMainCredits ? 'project__meta' : 'project__meta project__meta--coords-only'}>
         {hasMainCredits && (
           <dl class="project__credits">
-            {mainCredits!.credits.map((c) => (
+            {mainCredits!.credits.filter(c => c !== productionDesignBy).map((c) => (
               <div class="project__credit">
                 <dt>{c.role.toLowerCase()}</dt>
                 <dd><CreditNames names={c.names} /></dd>
