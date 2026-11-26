@@ -1,0 +1,11 @@
+---
+interface Props {
+  names: string[];
+  separator?: string;
+}
+const { names, separator = ', ' } = Astro.props;
+---
+{names.map((name, index) => <>{index > 0 && separator}{/^@[A-Za-z0-9._]{1,30}$/.test(name) ? <a href={'https://www.instagram.com/' + name.slice(1) + '/'} target="_blank" rel="noopener noreferrer">{name}</a> : name}</>)}
+<style>
+  a { text-decoration: underline; text-underline-offset: 0.15em; }
+</style>
