@@ -34,6 +34,13 @@ try {
   console.warn('Git upload history unavailable; using recorded Works chronology.');
 }
 projects.sort((a, b) => (added.get(b.data.slug) ?? initialUpload) - (added.get(a.data.slug) ?? initialUpload));
+
+// The final slot in the second four-column row is reserved for Say My Name.
+const chemodanIndex = projects.findIndex(project => project.data.slug === 'thechemodansaymyname');
+if (chemodanIndex >= 0) {
+  const [chemodan] = projects.splice(chemodanIndex, 1);
+  projects.splice(7, 0, chemodan);
+}
 ---
 
 <BaseLayout title="works">
