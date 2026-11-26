@@ -68,11 +68,8 @@ for (const [k, v] of Object.entries(allLinks)) {
 const poster = media.poster ?? youtubePoster(ytUrl) ?? undefined;
 const showVideoBlock = Boolean(media.mainVideo || d.video.bunny || ytUrl || poster);
 
-// Stills for the gallery (grid + lightbox) — NEVER include the poster. The
-// poster is the project cover only; it must not appear as a still or in the
-// stills lightbox navigation. Belt-and-suspenders: drop the exact poster asset
-// URL AND any built "poster.*" asset, regardless of how it entered the list.
-const stills = media.stills.filter(
+// Natural born lovers uses its cover as one of the six selected stills.
+const stills = d.slug === 'naturalbornlovers' ? media.stills : media.stills.filter(
   (src) => src !== media.poster && !/\/poster\.[^/]*\.(?:jpe?g|png|webp)$/i.test(src)
 );
 
